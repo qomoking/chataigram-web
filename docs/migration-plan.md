@@ -26,22 +26,22 @@ Wave 3  切真数据     自动：core 发版 → web bump submodule → 删 moc
 
 | Feature | core hooks | web 页面/组件 | 状态 |
 |---|---|---|---|
-| **auth** | `useCurrentUser` `useLogin` `useRegister` `useLogout` `useCheckUsername` `useUserInfo` | `LoginPage` `GoogleCallbackPage` | 🟡 Wave 1 进行中 |
-| **路由骨架** | — | `App` with `react-router` + 路由守卫 | ⬜ 未开始 |
+| **auth** | ✅ `useCurrentUser` `useLogin` `useRegister` `useLogout` `useCheckUsername` `useUserInfo` `useSetCurrentUser` `parseGoogleCallback` | ✅ `LoginPage` `GoogleCallbackPage` | 🟢 **完成**（Wave 1+2+3）|
+| **路由骨架** | — | ✅ `App` with `BrowserRouter` + `ProtectedRoute` | 🟢 完成 |
 
 ### 🟧 P1 核心体验
 
 | Feature | core hooks | web 页面/组件 | 状态 |
 |---|---|---|---|
-| **feed 完整版** | ✅ `useFeed` `useLikePost`；待加：`useRemixes` `useCreatePost` `useDeletePost` `useUserPosts` | `FeedPage`（加 Lightbox / timeAgo / TabBar）| 🟢 MVP 完成，待补 |
-| **创建内容** | `useCreatePost` `useRemixPost` `useVoiceTranscribe` `useGenerateImage` | `CreatePage` `Create` `CreateAvatarPage` `CameraFlow` `PreviewCard` `VoiceRemixButton` | ⬜ 未开始 |
-| **个人主页** | `useUserPosts` `useUserProfile` | `ProfilePage` `Profile` `WorksPage` | ⬜ 未开始 |
+| **feed 完整版** | ✅ `useFeed` `useLikePost`；延后：`useRemixes`（浏览子树用）| `FeedPage`（MVP 已有；待补 Lightbox / timeAgo / TabBar）| 🟢 核心完成，UI 待补 |
+| **创建内容** | ✅ `useCreatePost` `useRemixPost` `useRemixTask` `useGhibliRemix` `useVoiceTranscribe` `usePublishPost` `useDeletePost` `useGenerateImage` | `CreatePage` `Create` `CreateAvatarPage` `CameraFlow` `PreviewCard` `VoiceRemixButton` | 🟢 Wave 1 完成，**Track W 可以接** |
+| **个人主页** | ✅ `useUserPosts` `useUserInfo` | `ProfilePage` `Profile` `WorksPage` | 🟢 Wave 1 完成，**Track W 可以接** |
 
 ### 🟨 P2 社交 / 通知
 
 | Feature | core hooks | web 页面/组件 | 状态 |
 |---|---|---|---|
-| **Inbox / 通知** | `useInbox` `useMarkRead` `useNotificationSocket` | `InboxPage` `NotificationManager` `Toast` `UnseenBubble` | ⬜ 未开始 |
+| **Inbox / 通知** | ✅ `useInbox` `useMarkRead` `useUnreadCount`（WebSocket push 延后）| `InboxPage` `NotificationManager` `Toast` `UnseenBubble` | 🟢 Wave 1 完成（轮询版本），**Track W 可以接** |
 | **广场 (Plaza)** | `usePlazaFeed` `usePlazaSocket` | `PlazaPage` | ⬜ 未开始 |
 | **邀请** | `useMyInviteCodes` `useRedeemInvite` | `InvitePage` | ⬜ 未开始 |
 
