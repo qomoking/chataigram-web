@@ -1,0 +1,168 @@
+.inline-feed {
+  width: 100%;
+}
+
+.inline-feed-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.inline-feed-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.inline-feed-scroll::-webkit-scrollbar { display: none; }
+
+/* Card */
+.ifc {
+  flex-shrink: 0;
+  width: 130px;
+  cursor: pointer;
+}
+
+.ifc-img-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.06);
+}
+
+.ifc-img {
+  width: 130px;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
+.ifc-like {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0,0,0,0.55);
+  border: none;
+  border-radius: 20px;
+  padding: 3px 7px 3px 5px;
+  color: rgba(255,255,255,0.75);
+  font-size: 11px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: color 0.15s;
+}
+.ifc-like.liked { color: #ef4444; }
+
+.ifc-author {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.ifc-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.ifc-name {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Expanded view */
+.inline-feed-expanded {
+  width: 100%;
+}
+
+.ife-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 10px;
+}
+.ife-back:hover { color: rgba(255,255,255,0.8); }
+
+.ife-big-img {
+  width: 100%;
+  border-radius: 12px;
+  display: block;
+  max-height: 400px;
+  object-fit: cover;
+}
+
+.ife-big-meta {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ife-author {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ife-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.ife-author span {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+}
+
+.ife-big-prompt {
+  font-size: 12px;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.ife-like-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+.ife-like-btn.liked { color: #ef4444; }

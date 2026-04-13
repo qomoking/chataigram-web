@@ -8,6 +8,7 @@
  * 3. 合并真 hook 后，删掉对应 handler
  */
 import { http, HttpResponse } from 'msw'
+import { plazaWsHandler } from './plaza-ws'
 
 // 后端 PostItem 的形状（snake_case）—— core 会 normalize 成 Post
 type PostRow = {
@@ -351,4 +352,38 @@ export const handlers = [
     }))
     return HttpResponse.json({ ret_code: 200, posts, has_more: false })
   }),
+
+  // ──────────────────────────────────────────────────────────
+  //  invite (core 0.0.4)
+  // ──────────────────────────────────────────────────────────
+
+  http.get('/api/invite/my', ({ request }) => {
+    const userId = Number(new URL(request.url).searchParams.get('user_id') ?? 0)
+    return HttpResponse.json({
+      ret_code: 200,
+      codes: [
+        { code: 'MOCK-' + userId + '-1', used: false, created_at: '2026-03-01' },
+        { code: 'MOCK-' + userId + '-2', used: true, used_by: userId + 1, created_at: '2026-03-02' },
+      ],
+      total_count: 2,
+      max_count: 5,
+    })
+  }),
+
+  http.post('/api/invite/generate', async ({ request }) => {
+    const body = (await request.json().catch(() => null)) as { user_id?: number } | null
+    const newCode = 'NEW-' + Math.random().toString(36).slice(2, 8).toUpperCase()
+    return HttpResponse.json({
+      ret_code: 200,
+      code: newCode,
+      total_count: 3,
+      max_count: 5,
+      user_id: body?.user_id,
+    })
+  }),
+
+  // ──────────────────────────────────────────────────────────
+  //  plaza WebSocket (core 0.0.4)
+  // ──────────────────────────────────────────────────────────
+  plazaWsHandler,
 ]
