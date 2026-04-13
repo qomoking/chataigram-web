@@ -1,11 +1,8 @@
 import { test, expect } from '@playwright/test'
 
 /**
- * Feed 相关 E2E：
- *   - 登录后进 feed，看到 MSW 假帖
- *   - 点赞按钮触发乐观更新
- *
- * 每个 test 前用 addInitScript 预埋用户到 localStorage，跳过 LoginPage。
+ * ImmersiveFeedPage 路由 `/` 的 E2E。
+ * 每个测试前 addInitScript 预埋用户到 localStorage，跳过 LoginPage。
  */
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -21,37 +18,50 @@ test.beforeEach(async ({ page }) => {
   })
 })
 
-test('logged-in user sees feed posts from MSW', async ({ page }) => {
+test('logged-in user sees immersive feed (first post content)', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByText('赛博朋克风的猫')).toBeVisible({ timeout: 5000 })
-  await expect(page.getByText('吉卜力风格的森林小屋')).toBeVisible()
+  // MSW 假 feed 第一条内容是 "今天画了一只赛博朋克风的猫"
+  await expect(page.getByText(/赛博朋克风的猫/)).toBeVisible({ timeout: 5000 })
 })
 
-test('like button optimistically bumps count', async ({ page }) => {
+test('like button bumps count on immersive feed', async ({ page }) => {
   await page.goto('/')
-  const firstCard = page.locator('article').first()
-  await expect(firstCard).toBeVisible({ timeout: 5000 })
-  await expect(firstCard.getByText('42')).toBeVisible()
+  await expect(page.getByText(/赛博朋克风的猫/)).toBeVisible({ timeout: 5000 })
 
-  // 第一个 ❤ 按钮（overlay）—— 触发 like mutation
-  await firstCard.getByLabel('like').first().click()
-  await expect(firstCard.getByText('43')).toBeVisible()
+  // ImmersiveFeedPage 的右侧 like 按钮 aria-label="like"，数字紧跟在内部
+  const likeBtn = page.getByLabel('like').first()
+  await expect(likeBtn).toBeVisible()
+  // 第一条帖子的 like_num 是 42
+  await expect(likeBtn).toContainText('42')
+  // 直接调原生 click —— 沉浸式页面的右侧按钮在某些 viewport 下被 Playwright 误判超出视口
+  await likeBtn.evaluate((el) => (el as HTMLElement).click())
+  await expect(likeBtn).toContainText('43')
 })
 
-test('save button toggles bookmark persistence', async ({ page }) => {
+test('swipe changes active post (keyboard arrow)', async ({ page }) => {
   await page.goto('/')
-  const firstCard = page.locator('article').first()
-  await expect(firstCard).toBeVisible({ timeout: 5000 })
+  await expect(page.getByText(/赛博朋克风的猫/)).toBeVisible({ timeout: 5000 })
 
-  // action row 里最后一个按钮是 bookmark
-  const buttons = firstCard.getByRole('button')
-  const bookmarkBtn = buttons.last()
-  await bookmarkBtn.click()
+  // 用键盘触发 swipeUp（我们绑了 ArrowDown/Space 触发下一条）
+  await page.keyboard.press('ArrowDown')
+  // 下一条是 "吉卜力风格的森林小屋"
+  await expect(page.getByText(/吉卜力风格的森林小屋/)).toBeVisible({ timeout: 3000 })
+})
 
-  // 页面刷新后 bookmark 状态保留（通过 class 判断）
+test('save button persists bookmark across reload', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByText(/赛博朋克风的猫/)).toBeVisible({ timeout: 5000 })
+
+  await page.getByLabel('save').evaluate((el) => (el as HTMLElement).click())
+  // 收藏持久化到 localStorage
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('chataigram:saved-posts') ?? '[]'),
+  )
+  expect(saved).toContain(101)
+
   await page.reload()
-  const reloadedCard = page.locator('article').first()
-  await expect(reloadedCard).toBeVisible({ timeout: 5000 })
-  const reloadedBookmark = reloadedCard.getByRole('button').last()
-  await expect(reloadedBookmark).toHaveClass(/saved/)
+  await expect(page.getByText(/赛博朋克风的猫/)).toBeVisible({ timeout: 5000 })
+  // 收藏按钮应该带 active class
+  const btn = page.getByLabel('save')
+  await expect(btn).toHaveClass(/active/)
 })

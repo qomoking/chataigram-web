@@ -25,6 +25,7 @@ import Home from './pages/Home/Home'
 import Create from './pages/Create/Create'
 import CreateAvatarPage from './pages/CreateAvatarPage/CreateAvatarPage'
 import PlazaPage from './pages/PlazaPage/PlazaPage'
+import ImmersiveFeedPage from './pages/ImmersiveFeedPage/ImmersiveFeedPage'
 
 import NotificationManager, {
   type NotificationManagerHandle,
@@ -70,7 +71,8 @@ function Shell() {
     <div className="app-shell">
       <div className="page-area">
         <Routes>
-          <Route path="/" element={<FeedPage />} />
+          <Route path="/" element={<ImmersiveFeedPage />} />
+          <Route path="/feed" element={<FeedPage />} />
           <Route path="/home" element={<Home />} />
           <Route path="/create" element={<Create />} />
           <Route path="/create-avatar" element={<CreateAvatarPage />} />

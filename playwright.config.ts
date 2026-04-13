@@ -24,7 +24,12 @@ export default defineConfig({
   },
 
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      // 用 Pixel 5 尺寸 —— 小于 600px，绕过 index.css 里的桌面 9:16 手机框
+      // 测试沉浸式 feed 这种"占满屏幕"的交互才不会被 TabBar / viewport 挤出
+      name: 'chromium',
+      use: { ...devices['Pixel 5'] },
+    },
   ],
 
   webServer: {
