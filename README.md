@@ -31,9 +31,10 @@ git submodule update --init --recursive
 2. 在 `src/` 下改视觉、路由、组件、交互
 3. **数据从 `@chataigram/core` import**，不要自己写 fetch
 4. 如果 core 没有你要的能力：
-   - 用 `src/mocks/` 下的假数据顶住（step 4 会加 mocks 框架）
+   - 用 `src/mocks/` 下的假数据顶住
    - 在 `docs/core-wishlist.md` 追加一条
-5. `pnpm lint && pnpm typecheck && pnpm build` → PR
+5. `pnpm lint && pnpm typecheck && pnpm build && pnpm test` → PR
+6. 需要跑端到端：`pnpm e2e`（首次需要 `pnpm e2e:install` 装浏览器）
 
 ### ⚠️ 禁区
 

@@ -19,6 +19,9 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:install": "playwright install --with-deps chromium",
     "mocks:init": "msw init public/ --save",
     "core:bump": "node scripts/bump-core.mjs",
     "core:status": "git -C packages/core status && echo --- && git -C packages/core log -1 --oneline"
@@ -32,6 +35,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.13.0",
+    "@playwright/test": "^1.59.1",
     "@testing-library/react": "^16.0.1",
     "@types/node": "^20.16.0",
     "@types/react": "^18.3.12",
@@ -49,6 +53,8 @@
     "vitest": "^2.1.3"
   },
   "msw": {
-    "workerDirectory": ["public"]
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

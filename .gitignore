@@ -3,6 +3,11 @@ dist
 coverage
 *.log
 *.tsbuildinfo
+
+# Playwright
+/test-results
+/playwright-report
+/playwright/.cache
 .DS_Store
 .env
 .env.local

@@ -129,7 +129,9 @@ pnpm dev              # Vite dev server，连真后端
 pnpm dev:mocks        # 带 MSW，完全离线开发
 pnpm typecheck        # tsc -b，同时 check packages/core
 pnpm lint
-pnpm test
+pnpm test             # Vitest：L2 hook 测试 + L3 组件测试
+pnpm e2e              # Playwright L4：真浏览器端到端
+pnpm e2e:ui           # Playwright UI mode（调试用）
 pnpm build
 pnpm core:status      # 看 packages/core pin 哪个 SHA
 ```
