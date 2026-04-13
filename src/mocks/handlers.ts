@@ -383,6 +383,49 @@ export const handlers = [
   }),
 
   // ──────────────────────────────────────────────────────────
+  //  photo → image SSE pipeline (core 0.0.6)
+  // ──────────────────────────────────────────────────────────
+
+  http.post('/api/photo_to_image_stream', () => {
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (event: string, data: unknown) => {
+          controller.enqueue(
+            encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
+          )
+        }
+        // 模拟 4 阶段，每阶段间隔 300ms
+        const phases: Array<{ step: string; elapsed: number }> = [
+          { step: 'upload', elapsed: 0.1 },
+          { step: 'describe', elapsed: 0.5 },
+          { step: 'prompt', elapsed: 0.9 },
+          { step: 'generate', elapsed: 1.4 },
+        ]
+        for (const p of phases) {
+          send('step', p)
+          await new Promise((r) => setTimeout(r, 300))
+        }
+        const seed = Math.random().toString(36).slice(2, 8)
+        send('done', {
+          result_url: `https://picsum.photos/seed/${seed}/600/600`,
+          cdn_url: `https://picsum.photos/seed/${seed}/600/600`,
+          description: 'mock 描述：一张充满创意的画面',
+          prompt: `mock prompt seed=${seed}, vibrant colors, professional lighting`,
+        })
+        controller.close()
+      },
+    })
+    return new HttpResponse(stream, {
+      status: 200,
+      headers: {
+        'content-type': 'text/event-stream',
+        'cache-control': 'no-cache',
+      },
+    })
+  }),
+
+  // ──────────────────────────────────────────────────────────
   //  plaza WebSocket (core 0.0.4)
   // ──────────────────────────────────────────────────────────
   plazaWsHandler,
