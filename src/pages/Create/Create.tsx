@@ -5,6 +5,7 @@ import {
   useCurrentUser,
   useGenerateImage,
 } from '@chataigram/core'
+import VoiceRemixButton from '../../components/VoiceRemixButton'
 import './Create.css'
 
 type UserMsg = {
@@ -346,6 +347,14 @@ export default function Create() {
             onKeyDown={handleKeyDown}
             disabled={generate.isPending}
             rows={1}
+          />
+
+          <VoiceRemixButton
+            onRemix={(text) => {
+              setInputText((prev) => (prev ? `${prev} ${text}` : text))
+              textareaRef.current?.focus()
+            }}
+            disabled={generate.isPending}
           />
 
           <button
