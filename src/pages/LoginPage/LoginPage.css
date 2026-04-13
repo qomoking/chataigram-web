@@ -1,0 +1,442 @@
+.login-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* ── Select ────────────────────────────────────────────────── */
+.login-select {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 52px 24px 32px;
+  overflow-y: auto;
+}
+
+.select-in { animation: fadeUp .4s ease both; }
+
+.select-logo {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -.5px;
+  margin-bottom: 28px;
+}
+
+.select-header { margin-bottom: 4px; }
+
+.select-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+/* ── User cards ─────────────────────────────────────────────── */
+.user-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .2s, box-shadow .2s, transform .1s;
+  animation: cardIn .4s ease both;
+}
+.user-card:active { transform: scale(.98); }
+
+.user-card--selected {
+  border-color: var(--user-color, var(--accent));
+  box-shadow: 0 0 0 1px var(--user-color, var(--accent)), 0 0 16px color-mix(in srgb, var(--user-color, var(--accent)) 25%, transparent);
+}
+
+.user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.avatar-spinner {
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: rgba(255,255,255,0.8);
+  animation: spin 0.8s linear infinite;
+}
+
+.user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.user-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.user-id {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.user-check {
+  color: var(--user-color, var(--accent));
+  flex-shrink: 0;
+}
+
+/* ── Auth input & button (shared between card + username mode) ── */
+.card-auth {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.auth-input {
+  padding: 13px 16px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-input, 12px);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.auth-input:focus { border-color: rgba(167, 139, 250, 0.5); }
+.auth-input::placeholder { color: var(--text-secondary); }
+
+.auth-btn {
+  padding: 14px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 50px;
+  cursor: not-allowed;
+  transition: background .2s, color .2s, box-shadow .2s, transform .12s;
+  width: 100%;
+}
+.auth-btn--active {
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(139, 92, 246, .35);
+}
+.auth-btn--active:active { transform: scale(.96); }
+.auth-btn--loading {
+  background: var(--accent);
+  color: rgba(255, 255, 255, .8);
+  cursor: wait;
+}
+
+.auth-error {
+  font-size: 13px;
+  color: #ef4444;
+  text-align: center;
+  padding: 2px 0;
+}
+
+/* ── Username form ──────────────────────────────────────────── */
+.username-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Divider ─────────────────────────────────────────────────── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 12px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── New user / register button ─────────────────────────────── */
+.new-user-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  border: 1.5px dashed var(--border);
+  border-radius: 50px;
+  cursor: pointer;
+  width: 100%;
+  transition: color .2s, border-color .2s, transform .12s;
+}
+.new-user-btn:hover {
+  color: var(--text);
+  border-color: #444;
+}
+.new-user-btn:active { transform: scale(.97); }
+
+/* ── Text link ──────────────────────────────────────────────── */
+.text-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 12px 0 4px;
+  text-align: center;
+  width: 100%;
+  transition: opacity .15s;
+}
+.text-link:hover { opacity: .8; }
+
+/* ── Slide-up sheet ──────────────────────────────────────────── */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  animation: backdropIn .25s ease both;
+}
+
+.sheet {
+  width: 100%;
+  background: var(--bg-elevated, var(--bg-card));
+  border-radius: 20px 20px 0 0;
+  padding: 12px 24px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: sheetUp .3s cubic-bezier(.32, .72, 0, 1) both;
+}
+
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: #444;
+  border-radius: 2px;
+  margin: 0 auto 4px;
+}
+
+.sheet-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.sheet-input {
+  padding: 13px 16px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-input, 12px);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  transition: border-color .2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.sheet-input:focus { border-color: rgba(167, 139, 250, 0.5); }
+.sheet-input::placeholder { color: var(--text-secondary); }
+
+.sheet-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-hint {
+  font-size: 12px;
+  padding-left: 4px;
+}
+.field-hint--ok { color: #22c55e; }
+.field-hint--err { color: #ef4444; }
+.field-hint--checking { color: var(--text-secondary); }
+
+.sheet-confirm {
+  padding: 14px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 50px;
+  cursor: not-allowed;
+  transition: background .2s, color .2s, box-shadow .2s, transform .12s;
+}
+.sheet-confirm--active {
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(139, 92, 246, .35);
+}
+.sheet-confirm--active:active { transform: scale(.96); }
+
+.sheet-confirm--loading {
+  background: var(--accent);
+  color: rgba(255, 255, 255, .8);
+  cursor: wait;
+}
+
+/* ── Invite Code ────────────────────────────────────────────── */
+.invite-section {
+  margin-top: 20px;
+}
+
+.invite-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.invite-row .auth-input {
+  flex: 1;
+}
+
+.invite-arrow {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: not-allowed;
+  flex-shrink: 0;
+  transition: background .2s, color .2s, border-color .2s, box-shadow .2s, transform .12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.invite-arrow--active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(139, 92, 246, .35);
+}
+.invite-arrow--active:active { transform: scale(.92); }
+
+/* ── More toggle ─────────────────────────────────────────────── */
+.more-toggle {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 10px 0 2px;
+  text-align: center;
+  width: 100%;
+  transition: color .15s;
+  letter-spacing: .3px;
+}
+.more-toggle:hover { color: var(--text); }
+
+.more-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Google OAuth button ─────────────────────────────────────── */
+.google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px;
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  border: 1.5px solid var(--border);
+  border-radius: 50px;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color .2s, box-shadow .15s, transform .12s;
+}
+.google-btn:hover { border-color: #555; box-shadow: 0 0 0 1px #555; }
+.google-btn:active { transform: scale(.97); }
+.google-btn svg { flex-shrink: 0; }
+
+/* ── Keyframes ───────────────────────────────────────────────── */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fadeUp { animation: fadeUp .3s ease both; }
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sheetUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-6px); }
+  40%      { transform: translateX(6px); }
+  60%      { transform: translateX(-4px); }
+  80%      { transform: translateX(4px); }
+}
+.shake { animation: shake .4s ease; }

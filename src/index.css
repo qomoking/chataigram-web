@@ -1,0 +1,89 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #0f0f0f;
+  --bg-card: #1a1a1a;
+  --bg-elevated: #242424;
+  --accent: #8b5cf6;
+  --accent-dim: rgba(139, 92, 246, 0.15);
+  --text: #f0f0f0;
+  --text-secondary: #888;
+  --border: #2a2a2a;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+
+  --radius-pill: 50px;
+  --radius-card: 18px;
+  --radius-input: 14px;
+  --glass-bg: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --t-fast: 0.12s;
+  --t-base: 0.25s;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+}
+
+@media (min-width: 600px) {
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 70%),
+      #080808;
+  }
+  #root {
+    height: min(92dvh, 844px);
+    width: calc(min(92dvh, 844px) * 9 / 16);
+    flex-shrink: 0;
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    transform: translateZ(0);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 0 0 8px rgba(255, 255, 255, 0.03),
+      0 40px 100px rgba(0, 0, 0, 0.8),
+      0 0 60px rgba(139, 92, 246, 0.12);
+  }
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+input, textarea {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+}
