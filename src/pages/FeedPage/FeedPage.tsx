@@ -3,24 +3,30 @@ import { useFeed, useLikePost } from '@chataigram/core'
 import type { Post } from '@chataigram/core'
 import { useSavedPosts } from '../../hooks/useSavedPosts'
 import { HeartIcon, BookmarkIcon } from '../../components/icons'
+import CdnImg from '../../components/CdnImg'
+import TabBar from '../../components/TabBar'
 import styles from './FeedPage.module.css'
 
 /**
- * Feed 页 —— 公开 feed 流，masonry 布局 + 点赞 + 收藏。
- *
- * 数据来源：@chataigram/core 的 useFeed / useLikePost
- * 收藏（saved）：本地 localStorage（web 内部 hook）
+ * Feed 页 —— 公开 feed 流，masonry 布局 + 点赞 + 收藏 + Lightbox + TabBar。
  */
 export default function FeedPage() {
   const { data, isLoading, error } = useFeed({ limit: 20 })
   const like = useLikePost()
   const { isSaved, toggle: toggleSave } = useSavedPosts()
   const [bumpId, setBumpId] = useState<number | null>(null)
+  const [lightbox, setLightbox] = useState<Post | null>(null)
 
-  const handleLike = (postId: number) => {
+  const handleLike = (postId: number, e?: React.MouseEvent) => {
+    e?.stopPropagation()
     setBumpId(postId)
     setTimeout(() => setBumpId(null), 300)
     like.mutate(postId)
+  }
+
+  const handleSave = (postId: number, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    toggleSave(postId)
   }
 
   const posts = data?.posts ?? []
@@ -57,8 +63,9 @@ export default function FeedPage() {
                 post={p}
                 bumped={bumpId === p.id}
                 isSaved={isSaved(p.id)}
-                onLike={() => handleLike(p.id)}
-                onSave={() => toggleSave(p.id)}
+                onLike={(e) => handleLike(p.id, e)}
+                onSave={(e) => handleSave(p.id, e)}
+                onOpen={() => setLightbox(p)}
               />
             ))}
           </div>
@@ -69,13 +76,26 @@ export default function FeedPage() {
                 post={p}
                 bumped={bumpId === p.id}
                 isSaved={isSaved(p.id)}
-                onLike={() => handleLike(p.id)}
-                onSave={() => toggleSave(p.id)}
+                onLike={(e) => handleLike(p.id, e)}
+                onSave={(e) => handleSave(p.id, e)}
+                onOpen={() => setLightbox(p)}
               />
             ))}
           </div>
         </div>
       )}
+
+      {lightbox && (
+        <Lightbox
+          post={lightbox}
+          isSaved={isSaved(lightbox.id)}
+          onLike={() => handleLike(lightbox.id)}
+          onSave={() => handleSave(lightbox.id)}
+          onClose={() => setLightbox(null)}
+        />
+      )}
+
+      <TabBar />
     </main>
   )
 }
@@ -86,29 +106,32 @@ type CardProps = {
   post: Post
   bumped: boolean
   isSaved: boolean
-  onLike: () => void
-  onSave: () => void
+  onLike: (e: React.MouseEvent) => void
+  onSave: (e: React.MouseEvent) => void
+  onOpen: () => void
 }
 
-function Card({ post, bumped, isSaved, onLike, onSave }: CardProps) {
+function Card({ post, bumped, isSaved, onLike, onSave, onOpen }: CardProps) {
   const initial = String(post.authorId).slice(-1)
   const color = pickColor(post.authorId)
 
   return (
-    <article className={styles.card}>
+    <article className={styles.card} onClick={onOpen}>
       <div className={styles.imgWrap}>
         {post.photoUrl ? (
-          <img src={post.photoUrl} alt={post.content ?? ''} className={styles.img} loading="lazy" />
+          <CdnImg
+            src={post.photoUrl}
+            alt={post.content ?? ''}
+            className={styles.img}
+            loading="lazy"
+          />
         ) : (
           <div className={styles.imgPlaceholder}>无图</div>
         )}
         <button
           type="button"
           className={`${styles.likeOverlay} ${bumped ? styles.bumped : ''}`}
-          onClick={(e) => {
-            e.stopPropagation()
-            onLike()
-          }}
+          onClick={onLike}
           aria-label="like"
         >
           <HeartIcon filled={false} />
@@ -140,6 +163,89 @@ function Card({ post, bumped, isSaved, onLike, onSave }: CardProps) {
         </div>
       </div>
     </article>
+  )
+}
+
+// ── Lightbox ────────────────────────────────────────────
+
+type LightboxProps = {
+  post: Post
+  isSaved: boolean
+  onLike: () => void
+  onSave: () => void
+  onClose: () => void
+}
+
+function Lightbox({ post, isSaved, onLike, onSave, onClose }: LightboxProps) {
+  // 下滑关闭
+  const startY = { current: 0 as number }
+  const onTouchStart = (e: React.TouchEvent) => {
+    startY.current = e.touches[0]?.clientY ?? 0
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const end = e.changedTouches[0]?.clientY ?? 0
+    if (end - startY.current > 60) onClose()
+  }
+
+  return (
+    <div className={styles.lightbox} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <div className={styles.lbHeader}>
+        <div className={styles.lbAuthor}>
+          <div className={styles.dot} style={{ background: pickColor(post.authorId) }}>
+            {String(post.authorId).slice(-1)}
+          </div>
+          <span>user-{post.authorId}</span>
+        </div>
+        <button
+          type="button"
+          className={styles.lbClose}
+          onClick={onClose}
+          aria-label="close"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+
+      <div className={styles.lbImgWrap} onClick={(e) => e.stopPropagation()}>
+        {post.photoUrl ? (
+          <CdnImg src={post.photoUrl} alt={post.content ?? ''} className={styles.lbImg} />
+        ) : (
+          <div className={styles.imgPlaceholder}>无图</div>
+        )}
+      </div>
+
+      {post.content && (
+        <div className={styles.lbPrompt} onClick={(e) => e.stopPropagation()}>
+          {post.content}
+        </div>
+      )}
+
+      <div className={styles.lbActions} onClick={(e) => e.stopPropagation()}>
+        <button type="button" className={styles.lbActionBtn} onClick={onLike} aria-label="like">
+          <HeartIcon size={20} />
+          <span>{post.likeCount}</span>
+        </button>
+        <button
+          type="button"
+          className={`${styles.lbActionBtn} ${isSaved ? styles.saved : ''}`}
+          onClick={onSave}
+          aria-label="save"
+        >
+          <BookmarkIcon size={18} filled={isSaved} />
+        </button>
+      </div>
+    </div>
   )
 }
 
