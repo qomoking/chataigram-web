@@ -1,0 +1,15 @@
+node_modules
+dist
+coverage
+*.log
+*.tsbuildinfo
+.DS_Store
+.env
+.env.local
+.env.*.local
+.vscode
+.idea
+.turbo
+
+# 本地联调时生成的 pnpm overrides 标记（别 commit）
+.core-linked

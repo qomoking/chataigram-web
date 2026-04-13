@@ -1,0 +1,23 @@
+# ============================================================
+#  chataigram-web 是设计师的主场。
+#  默认设计师 + 工程师共同 own，但基础设施只允许工程师改。
+# ============================================================
+
+# 默认：UI 代码 designers + engineers 都能 review
+*                       @yinxinghuan @qomoking
+
+# 基础设施：必须工程师 review
+/.github/               @qomoking
+/scripts/               @qomoking
+/package.json           @qomoking
+/pnpm-lock.yaml         @qomoking
+/pnpm-workspace.yaml    @qomoking
+/.gitmodules            @qomoking
+/packages/core          @qomoking
+/vite.config.ts         @qomoking
+/vitest.config.ts       @qomoking
+/tsconfig*.json         @qomoking
+/eslint.config.js       @qomoking
+
+# 自动同步的契约文档：不允许人工编辑（bot 在 release 时覆盖；step 4 加）
+/docs/core-api.md       @qomoking
