@@ -33,40 +33,41 @@ Wave 3  切真数据     自动：core 发版 → web bump submodule → 删 moc
 
 | Feature | core hooks | web 页面/组件 | 状态 |
 |---|---|---|---|
-| **feed 完整版** | ✅ `useFeed` `useLikePost`；延后：`useRemixes`（浏览子树用）| `FeedPage`（MVP 已有；待补 Lightbox / timeAgo / TabBar）| 🟢 核心完成，UI 待补 |
-| **创建内容** | ✅ `useCreatePost` `useRemixPost` `useRemixTask` `useGhibliRemix` `useVoiceTranscribe` `usePublishPost` `useDeletePost` `useGenerateImage` | `CreatePage` `Create` `CreateAvatarPage` `CameraFlow` `PreviewCard` `VoiceRemixButton` | 🟢 Wave 1 完成，**Track W 可以接** |
-| **个人主页** | ✅ `useUserPosts` `useUserInfo` | `ProfilePage` `Profile` `WorksPage` | 🟢 Wave 1 完成，**Track W 可以接** |
+| **feed 完整版** | ✅ `useFeed` `useLikePost`；延后：`useRemixes` | ✅ `FeedPage`（masonry，路由 `/feed`）| 🟢 完成；Lightbox 仍可补 |
+| **沉浸式 feed** | 复用 `useFeed` `useLikePost` | ✅ `ImmersiveFeedPage`（路由 `/`）| 🟢 完成；横向 swipe / 双击 prank 延后 |
+| **创建内容** | ✅ 8 个 hooks | ✅ `Create`（chat 风格，含 `VoiceRemixButton`）`CreateAvatarPage`（简化版）| 🟢 完成；CreatePage 1734 行的"完整 Studio"未做 |
+| **个人主页** | ✅ `useUserPosts` `useUserInfo` | ✅ `ProfilePage` `Profile`（编辑）`WorksPage`（已发布/草稿）| 🟢 完成 |
 
 ### 🟨 P2 社交 / 通知
 
 | Feature | core hooks | web 页面/组件 | 状态 |
 |---|---|---|---|
-| **Inbox / 通知** | ✅ `useInbox` `useMarkRead` `useUnreadCount`（WebSocket push 延后）| `InboxPage` `NotificationManager` `Toast` `UnseenBubble` | 🟢 Wave 1 完成（轮询版本），**Track W 可以接** |
-| **广场 (Plaza)** | `usePlazaFeed` `usePlazaSocket` | `PlazaPage` | ⬜ 未开始 |
-| **邀请** | `useMyInviteCodes` `useRedeemInvite` | `InvitePage` | ⬜ 未开始 |
+| **Inbox / 通知** | ✅ `useInbox` `useMarkRead` `useUnreadCount` `useNotificationSocket`（WS push）| ✅ `InboxPage` `NotificationManager` `Toast` `UnseenBubble` `PreviewCard` | 🟢 完成 |
+| **广场 (Plaza)** | ✅ `usePlazaSocket` (init/join/leave/bump/status)| ✅ `PlazaPage`（2D canvas + drag + bump）| 🟢 完成；Lottie 头像动画延后 |
+| **邀请** | ✅ `useMyInviteCodes` `useGenerateInviteCode` | ✅ `InvitePage` | 🟢 完成 |
 
 ### 🟩 P3 沉浸式 / 其他
 
 | Feature | core hooks | web 页面/组件 | 状态 |
 |---|---|---|---|
-| **Immersive feed** | 复用 `useFeed` | `ImmersiveFeedPage` | ⬜ 未开始 |
-| **Home 入口** | — | `Home` | ⬜ 未开始 |
-| **CDN / 图片组件** | — | `CdnImg` | ⬜ 未开始（纯 UI） |
+| **Home 入口** | 复用 `useUserPosts` `useDeletePost` | ✅ `Home`（路由 `/home`）| 🟢 完成 |
+| **CDN / 图片组件** | — | ✅ `CdnImg` | 🟢 完成 |
+| **CameraFlow** | — | ⏸️ 占位（导到 `/create`）| 🟡 stub；photoToImage SSE pipeline 还没 |
 
 ### 🟪 P4 横切关注点
 
-| 主题 | 去哪 | 备注 |
+| 主题 | 去哪 | 状态 |
 |---|---|---|
-| `utils/i18n.js` | **core**（语言判断和字典 = 业务）→ `src/i18n/` | 设计师的 AI 用 `t()` 写 UI 文案 |
-| `utils/storage.js` | **拆分**：auth / profile / liked / saved / drafts → core；UI 偏好 → web | 正在拆 |
-| `utils/api.js` | **弃用** | core 的 `apiClient` + hooks 取代 |
-| `utils/featureFlags.js` | **core** `src/flags/` | |
-| `utils/engramApi.js` | **core** `src/api/engram.ts`（feature-flag）| 延后 |
-| `utils/notificationApi.js` | **core** | P2 做 |
-| `utils/toolRenderers.js` | **web** | 纯视觉 |
-| `utils/animationCache.js` | **web** | 纯视觉 |
-| `utils/cdn.js` | **web** | 纯视觉 |
-| `utils/mockData.js` | **弃用** | MSW 取代 |
+| `utils/i18n.js` | ✅ web `src/utils/i18n.ts`（dict 1:1） | 完成 |
+| `utils/storage.js` | ✅ 已拆：auth → core/`auth/storage.ts`；本地偏好 → web/`profile-storage.ts` `useSavedPosts`；exposed ids → web/`useUnseenNotifications` | 完成 |
+| `utils/api.js` | ✅ 弃用，全部走 core hooks | 完成 |
+| `utils/featureFlags.js` | ✅ web `src/utils/featureFlags.ts` | 完成 |
+| `utils/cdn.js` | ✅ web `src/utils/cdn.ts` | 完成 |
+| `utils/animationCache.js` | ✅ web `src/utils/animationCache.ts`（PlazaPage 还没 wire 进 Lottie） | 完成 |
+| `utils/notificationApi.js` | ✅ 弃用，由 useInbox / useMarkRead / useUnreadCount 替代 | 完成 |
+| `utils/engramApi.js` | ⬜ 延后（Engram 集成 = feature flag 默认关）| 未开始 |
+| `utils/toolRenderers.js` | ⬜ 仅在被 ImmersiveFeed 之外的页面用到时再迁 | 未开始 |
+| `utils/mockData.js` | ✅ 弃用，MSW handlers 替代 | 完成 |
 
 ---
 
@@ -114,3 +115,27 @@ Wave 1 建议：**把所有 feature 的 hook 签名 + 类型一次性加到 `cor
 - 本文件是**活文档**。picker 选一项就在对应行加 `[in-progress by @<handle>]`
 - 完成后把行移到"最近完成"区（可在本文末尾加个 section）
 - 每次 `pnpm core:bump` 后，检查这份清单是否有任务可以 close
+
+---
+
+## 当前完成度（截至最近一次 push）
+
+```
+core   24 hooks · 25 types · 72 tests · 0 build step (source-imported via workspace)
+web    14 pages · 13 components · 95 tests (L1+L2+L3+L4)
+```
+
+**对齐的页面**：LoginPage / GoogleCallbackPage / FeedPage / ImmersiveFeedPage /
+PlazaPage / Home / Create / CreateAvatarPage / Profile / ProfilePage / WorksPage /
+InboxPage / InvitePage（13/14 实迁，CameraFlow 是 stub）。
+
+**故意延后的"完整原版"**：
+- CreatePage（1734 行 Studio）—— 当前用 Create.tsx 的 chat-style 替代
+- CameraFlow（1214 行 SSE 流水线）—— 占位跳转到 /create
+- 双击 prank suggestions / horizontal remix swipe / Lottie 头像动画
+
+**核心 SDK 还没的接口**（决定上面"完整原版"何时能做）：
+- `usePhotoToImage`（SSE 流式 4 阶段 pipeline）
+- `useUploadImage` / `useImageDescription` / `useSuggestions` / `useUpdateAvatar`
+- `useComment` / `useReact`（社交向）
+- `usePrankSuggestions`
