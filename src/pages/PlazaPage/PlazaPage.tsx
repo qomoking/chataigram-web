@@ -5,6 +5,7 @@ import {
   useState,
   type CSSProperties,
 } from 'react'
+import Lottie from 'lottie-react'
 import {
   useCurrentUser,
   usePlazaSocket,
@@ -14,6 +15,7 @@ import {
 import CdnImg from '../../components/CdnImg'
 import TabBar from '../../components/TabBar'
 import { rewriteCdnUrlSync } from '../../utils/cdn'
+import { fetchAnimationData } from '../../utils/animationCache'
 import './PlazaPage.css'
 
 const TAP_THRESHOLD = 8
@@ -47,6 +49,8 @@ export default function PlazaPage() {
   const [bumpedUid, setBumpedUid] = useState<number | null>(null)
   const [statusInput, setStatusInput] = useState('')
   const [panVersion, setPanVersion] = useState(0)
+  // user_id → Lottie JSON，拉到就进；PlazaPage 渲染时检查
+  const [animations, setAnimations] = useState<Record<number, object>>({})
 
   const panRef = useRef({ x: 0, y: 0 })
   const worldRef = useRef<HTMLDivElement>(null)
@@ -58,6 +62,18 @@ export default function PlazaPage() {
     startPanX: 0,
     startPanY: 0,
   })
+
+  // ── 拉取某个用户的 Lottie 动画 ───────────────────────────────
+  const fetchAnimation = useCallback(
+    async (userId: number, taskId: string | null) => {
+      if (!taskId || animations[userId]) return
+      const lottie = await fetchAnimationData(userId, taskId)
+      if (lottie) {
+        setAnimations((prev) => ({ ...prev, [userId]: lottie as object }))
+      }
+    },
+    [animations],
+  )
 
   const centerOn = useCallback((posX: number, posY: number) => {
     const vp = viewportRef.current
@@ -79,17 +95,32 @@ export default function PlazaPage() {
         setMyPos(msg.myPos)
         setTimeout(() => centerOn(msg.myPos!.x, msg.myPos!.y), 50)
       }
+      // 预取所有已在广场的用户的 Lottie
+      for (const u of msg.users) {
+        if (u.animationTaskId) void fetchAnimation(u.id, u.animationTaskId)
+      }
     },
-    [centerOn],
+    [centerOn, fetchAnimation],
   )
 
-  const onUserJoin = useCallback((user: PlazaUser) => {
-    setUsers((prev) => {
-      const existing = prev.find((u) => u.id === user.id)
-      if (existing) return prev.map((u) => (u.id === user.id ? user : u))
-      return [...prev, user]
-    })
-  }, [])
+  const onUserJoin = useCallback(
+    (user: PlazaUser) => {
+      setUsers((prev) => {
+        const existing = prev.find((u) => u.id === user.id)
+        if (existing) return prev.map((u) => (u.id === user.id ? user : u))
+        return [...prev, user]
+      })
+      if (user.animationTaskId) void fetchAnimation(user.id, user.animationTaskId)
+    },
+    [fetchAnimation],
+  )
+
+  const onAnimationReady = useCallback(
+    (userId: number, taskId: string) => {
+      void fetchAnimation(userId, taskId)
+    },
+    [fetchAnimation],
+  )
 
   const onUserLeave = useCallback((userId: number) => {
     setUsers((prev) => prev.filter((u) => u.id !== userId))
@@ -135,6 +166,7 @@ export default function PlazaPage() {
     onUserLeave,
     onBump,
     onStatusUpdate,
+    onAnimationReady,
   })
 
   // ── Pan handling ──────────────────────────────────────────────
@@ -310,8 +342,17 @@ export default function PlazaPage() {
               style={{ left: u.posX, top: u.posY } as CSSProperties}
             >
               <div className="avatar-card">
-                <div className="avatar-img-wrap floating">
-                  {u.avatarUrl ? (
+                <div
+                  className={`avatar-img-wrap${animations[u.id] ? '' : ' floating'}`}
+                >
+                  {animations[u.id] ? (
+                    <Lottie
+                      animationData={animations[u.id]}
+                      loop
+                      autoplay
+                      style={{ width: 56, height: 56, borderRadius: '50%' }}
+                    />
+                  ) : u.avatarUrl ? (
                     <CdnImg src={u.avatarUrl} alt={u.name} className="avatar-img" />
                   ) : (
                     <div className="avatar-fallback">{(u.name || '?')[0]}</div>

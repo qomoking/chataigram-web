@@ -19,6 +19,7 @@ export const plazaWsHandler = plaza.addEventListener('connection', ({ client }) 
   client.send(
     JSON.stringify({
       type: 'init',
+      user: { pos_x: 200, pos_y: 200 },
       users: [
         {
           id: myId,
@@ -26,7 +27,9 @@ export const plazaWsHandler = plaza.addEventListener('connection', ({ client }) 
           avatar: null,
           status_text: '在线',
           status_emoji: '🟢',
-          animation_task_id: null,
+          animation_task_id: 'mock-anim-self',
+          pos_x: 200,
+          pos_y: 200,
         },
         {
           id: 9001,
@@ -34,7 +37,9 @@ export const plazaWsHandler = plaza.addEventListener('connection', ({ client }) 
           avatar: 'https://picsum.photos/seed/a/100',
           status_text: '摸鱼中',
           status_emoji: '🐟',
-          animation_task_id: null,
+          animation_task_id: 'mock-anim-9001',
+          pos_x: 380,
+          pos_y: 120,
         },
         {
           id: 9002,
@@ -43,6 +48,8 @@ export const plazaWsHandler = plaza.addEventListener('connection', ({ client }) 
           status_text: null,
           status_emoji: '☕️',
           animation_task_id: null,
+          pos_x: 120,
+          pos_y: 320,
         },
       ],
     }),

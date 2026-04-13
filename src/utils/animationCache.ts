@@ -46,3 +46,27 @@ export function setCachedAnimation(
 ): void {
   if (userId != null && lottie) cache[userId] = lottie
 }
+
+/**
+ * 一次性拉某个 taskId 的 Lottie JSON（带缓存）；失败返回 null，不抛异常。
+ * 给 PlazaPage 的 on-demand 拉取用。
+ */
+export async function fetchAnimationData(
+  userId: number,
+  taskId: string,
+): Promise<LottieJson | null> {
+  const cached = getCachedAnimation(userId)
+  if (cached) return cached
+  try {
+    const res = await fetch(`/api/animations/${taskId}`)
+    if (!res.ok) return null
+    const data = (await res.json()) as { lottie?: LottieJson }
+    if (data.lottie) {
+      cache[userId] = data.lottie
+      return data.lottie
+    }
+    return null
+  } catch {
+    return null
+  }
+}
