@@ -24,6 +24,7 @@ import WorksPage from './pages/WorksPage/WorksPage'
 import Home from './pages/Home/Home'
 import Create from './pages/Create/Create'
 import CreateAvatarPage from './pages/CreateAvatarPage/CreateAvatarPage'
+import PlazaPage from './pages/PlazaPage/PlazaPage'
 
 import NotificationManager, {
   type NotificationManagerHandle,
@@ -78,6 +79,7 @@ function Shell() {
           <Route path="/works" element={<WorksPage />} />
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/invites" element={<InvitePage />} />
+          <Route path="/plaza" element={<PlazaPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
