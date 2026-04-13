@@ -121,4 +121,61 @@ export const handlers = [
     post.like_num += 1
     return HttpResponse.json({ ret_code: 200, like_num: post.like_num })
   }),
+
+  // ──────────────────────────────────────────────────────────
+  //  auth
+  // ──────────────────────────────────────────────────────────
+
+  http.post('/api/login', async ({ request }) => {
+    const body = (await request.json().catch(() => null)) as
+      | { username?: string; password?: string }
+      | null
+    if (!body?.username || !body?.password) {
+      return HttpResponse.json({ ret_code: 400, error: 'Missing credentials' })
+    }
+    // mock：任何非空凭据都当成 alice 登录成功
+    return HttpResponse.json({
+      ret_code: 200,
+      user_id: 1001,
+      name: 'Alice (mock)',
+      username: body.username,
+      avatar: 'https://picsum.photos/seed/alice/200/200',
+      animation_task_id: null,
+    })
+  }),
+
+  http.post('/api/register', async ({ request }) => {
+    const body = (await request.json().catch(() => null)) as
+      | { name?: string; username?: string; password?: string; invite_code?: string }
+      | null
+    if (!body?.name || !body?.username || !body?.password) {
+      return HttpResponse.json({ ret_code: 400, error: 'Missing fields' })
+    }
+    return HttpResponse.json({
+      ret_code: 200,
+      user_id: Math.floor(Math.random() * 10_000) + 2000,
+      name: body.name,
+      username: body.username,
+      avatar: null,
+      animation_task_id: 'mock-task-' + Date.now(),
+    })
+  }),
+
+  http.get('/api/check_username', ({ request }) => {
+    const username = new URL(request.url).searchParams.get('username') ?? ''
+    // mock：用户名是 "taken" 或 "admin" 时判定已占用
+    const taken = ['taken', 'admin', 'alice'].includes(username.toLowerCase())
+    return HttpResponse.json({ available: !taken })
+  }),
+
+  http.get('/api/user_info', ({ request }) => {
+    const userId = new URL(request.url).searchParams.get('user_id')
+    if (!userId) return HttpResponse.json(null)
+    return HttpResponse.json({
+      id: Number(userId),
+      name: `user-${userId} (mock)`,
+      username: `user${userId}`,
+      avatar: `https://picsum.photos/seed/u${userId}/200/200`,
+    })
+  }),
 ]
