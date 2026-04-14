@@ -33,10 +33,8 @@ describe('<ImmersiveFeedPage> L3', () => {
   it('renders first post from MSW', async () => {
     renderAt()
     await waitFor(() => expect(screen.getByText(/赛博朋克风的猫/)).toBeTruthy())
-    // 右侧 3 个 action 按钮
+    // like 按钮在底部 stats 行
     expect(screen.getByLabelText('like')).toBeTruthy()
-    expect(screen.getByLabelText('save')).toBeTruthy()
-    expect(screen.getByLabelText('remix')).toBeTruthy()
   })
 
   it('ArrowDown keyboard advances to next post', async () => {
