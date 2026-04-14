@@ -1,9 +1,12 @@
 import {
+  Component,
   useCallback,
   useMemo,
   useRef,
   useState,
   type CSSProperties,
+  type ErrorInfo,
+  type ReactNode,
 } from 'react'
 import Lottie from 'lottie-react'
 import {
@@ -51,6 +54,8 @@ export default function PlazaPage() {
   const [panVersion, setPanVersion] = useState(0)
   // user_id → Lottie JSON，拉到就进；PlazaPage 渲染时检查
   const [animations, setAnimations] = useState<Record<number, object>>({})
+  const animationsRef = useRef(animations)
+  animationsRef.current = animations
 
   const panRef = useRef({ x: 0, y: 0 })
   const worldRef = useRef<HTMLDivElement>(null)
@@ -66,13 +71,13 @@ export default function PlazaPage() {
   // ── 拉取某个用户的 Lottie 动画 ───────────────────────────────
   const fetchAnimation = useCallback(
     async (userId: number, taskId: string | null) => {
-      if (!taskId || animations[userId]) return
+      if (!taskId || animationsRef.current[userId]) return
       const lottie = await fetchAnimationData(userId, taskId)
       if (lottie) {
         setAnimations((prev) => ({ ...prev, [userId]: lottie as object }))
       }
     },
-    [animations],
+    [],
   )
 
   const centerOn = useCallback((posX: number, posY: number) => {
@@ -348,12 +353,22 @@ export default function PlazaPage() {
                   className={`avatar-img-wrap${animations[u.id] ? '' : ' floating'}`}
                 >
                   {animations[u.id] ? (
-                    <Lottie
-                      animationData={animations[u.id]}
-                      loop
-                      autoplay
-                      style={{ width: 56, height: 56, borderRadius: '50%' }}
-                    />
+                    <LottieBoundary
+                      fallback={
+                        u.avatarUrl ? (
+                          <CdnImg src={u.avatarUrl} alt={u.name} className="avatar-img" />
+                        ) : (
+                          <div className="avatar-fallback">{(u.name || '?')[0]}</div>
+                        )
+                      }
+                    >
+                      <Lottie
+                        animationData={animations[u.id]}
+                        loop
+                        autoplay
+                        style={{ width: 56, height: 56, borderRadius: '50%' }}
+                      />
+                    </LottieBoundary>
                   ) : u.avatarUrl ? (
                     <CdnImg src={u.avatarUrl} alt={u.name} className="avatar-img" />
                   ) : (
@@ -497,6 +512,23 @@ export default function PlazaPage() {
       <TabBar />
     </div>
   )
+}
+
+/** Lottie error boundary — 出错时回退到静态头像，不炸掉整个页面 */
+class LottieBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  componentDidCatch(_error: Error, _info: ErrorInfo) {
+    // silent — 已回退到 fallback
+  }
+  render() {
+    return this.state.hasError ? this.props.fallback : this.props.children
+  }
 }
 
 function LocateIcon() {
