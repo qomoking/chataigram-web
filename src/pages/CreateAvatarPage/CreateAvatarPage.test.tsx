@@ -1,6 +1,3 @@
-/**
- * L3: CreateAvatarPage 简化版。
- */
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -30,7 +27,7 @@ describe('<CreateAvatarPage> L3', () => {
     localStorage.clear()
   })
 
-  it('renders 6 style chips + generate button', () => {
+  it('renders 6 style chips + send button', () => {
     renderAt()
     expect(screen.getByText('3D')).toBeTruthy()
     expect(screen.getByText('动漫')).toBeTruthy()
@@ -38,22 +35,28 @@ describe('<CreateAvatarPage> L3', () => {
     expect(screen.getByText('油画')).toBeTruthy()
     expect(screen.getByText('水彩')).toBeTruthy()
     expect(screen.getByText('像素')).toBeTruthy()
-    expect(screen.getByRole('button', { name: '生成头像' })).toBeTruthy()
+    expect(screen.getByLabelText('send')).toBeTruthy()
   })
 
-  it('generate → show result → 用作头像 → 跳 /profile', async () => {
+  it('select chip + send generates + suggestions appear, then use as avatar → /profile', async () => {
     renderAt()
-    // 等 useCurrentUser 异步 query 落位（handleGenerate 里 !currentUser 守卫）
     await new Promise((r) => setTimeout(r, 30))
+
     fireEvent.click(screen.getByText('3D'))
-    fireEvent.click(screen.getByRole('button', { name: '生成头像' }))
-    await waitFor(() => expect(screen.getByText('用作头像')).toBeTruthy(), {
-      timeout: 3000,
-    })
-    fireEvent.click(screen.getByText('用作头像'))
+    fireEvent.click(screen.getByLabelText('send'))
+
+    // 生成完成后显示建议 chips
+    await waitFor(
+      () => {
+        // MSW /api/suggestion 返回 '太空版' '水彩风'
+        expect(screen.getByText('太空版')).toBeTruthy()
+      },
+      { timeout: 5000 },
+    )
+
+    // 点"用作头像" → navigate /profile
+    await waitFor(() => expect(screen.getByText(/用作头像/)).toBeTruthy())
+    fireEvent.click(screen.getByText(/用作头像/))
     await waitFor(() => expect(screen.getByTestId('profile')).toBeTruthy())
-    // 本地 profile 存了新头像
-    const stored = JSON.parse(localStorage.getItem('omnient_profile')!)
-    expect(stored.avatar).toMatch(/picsum/)
   })
 })

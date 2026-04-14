@@ -4,9 +4,12 @@ import {
   useCommentPost,
   useFeed,
   useLikePost,
+  usePrankSuggestions,
   useRemixes,
+  useRemixPost,
   type Post,
   type Notification,
+  type SuggestionItem,
 } from '@chataigram/core'
 import CdnImg from '../../components/CdnImg'
 import TabBar from '../../components/TabBar'
@@ -38,10 +41,14 @@ export default function ImmersiveFeedPage() {
   const [preview, setPreview] = useState<Notification | null>(null)
   const [commentOpen, setCommentOpen] = useState(false)
   const [commentText, setCommentText] = useState('')
+  const [prankPanel, setPrankPanel] = useState<SuggestionItem[] | null>(null)
   const startY = useRef<number | null>(null)
   const startX = useRef<number | null>(null)
+  const lastTapRef = useRef(0)
   const commentInputRef = useRef<HTMLInputElement>(null)
   const comment = useCommentPost()
+  const prank = usePrankSuggestions()
+  const remix = useRemixPost()
 
   const posts: Post[] = data?.posts ?? []
   const rootPost = posts[activeIdx] ?? null
@@ -100,6 +107,18 @@ export default function ImmersiveFeedPage() {
     const dx = endX - startX.current
     startY.current = startX.current = null
 
+    // 双击检测（300ms 内两次 tap）
+    if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) {
+      const now = Date.now()
+      if (now - lastTapRef.current < 300) {
+        lastTapRef.current = 0
+        handleDoubleTap()
+        return
+      }
+      lastTapRef.current = now
+      return
+    }
+
     // 以主轴方向判断纵向 vs 横向
     if (Math.abs(dx) > Math.abs(dy)) {
       if (Math.abs(dx) < SWIPE_THRESHOLD) return
@@ -124,6 +143,33 @@ export default function ImmersiveFeedPage() {
   }
 
   const handleNewPost = () => navigate('/create')
+
+  // ── 双击 prank ───────────────────────────────────────────
+  const handleDoubleTap = useCallback(() => {
+    if (!visiblePost?.photoUrl) return
+    prank.mutate(
+      { imageUrl: visiblePost.photoUrl, prompt: visiblePost.optional ?? '' },
+      { onSuccess: (items) => setPrankPanel(items) },
+    )
+  }, [visiblePost, prank])
+
+  const handlePrankPick = (item: SuggestionItem) => {
+    if (!visiblePost) return
+    remix.mutate(
+      {
+        authorId: visiblePost.authorId,
+        parentPostId: visiblePost.id,
+        instruction: item.prompt,
+        mode: 'draw-back',
+      },
+      {
+        onSuccess: () => {
+          setPrankPanel(null)
+          // TODO: 打开 useRemixTask 轮询结果
+        },
+      },
+    )
+  }
 
   const handleCommentOpen = () => {
     setCommentOpen(true)
@@ -337,6 +383,40 @@ export default function ImmersiveFeedPage() {
       )}
 
       {preview && <PreviewCard notification={preview} onClose={() => setPreview(null)} />}
+
+      {/* ── prank panel ── */}
+      {prankPanel && (
+        <div
+          className="imf-prank-backdrop"
+          onClick={() => setPrankPanel(null)}
+        >
+          <div className="imf-prank-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="imf-prank-title">整一下？</div>
+            <div className="imf-prank-list">
+              {prankPanel.map((item, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="imf-prank-item"
+                  onClick={() => handlePrankPick(item)}
+                  disabled={remix.isPending}
+                >
+                  <span className="imf-prank-emoji">{item.emoji ?? '🎯'}</span>
+                  <span className="imf-prank-label">{item.label}</span>
+                  {item.desc && <span className="imf-prank-desc">{item.desc}</span>}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="imf-prank-cancel"
+              onClick={() => setPrankPanel(null)}
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
 
       {commentOpen && (
         <div

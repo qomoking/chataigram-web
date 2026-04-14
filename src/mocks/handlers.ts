@@ -543,6 +543,45 @@ export const handlers = [
   }),
 
   // ──────────────────────────────────────────────────────────
+  //  VLM / suggestions / avatar (core 0.0.8)
+  // ──────────────────────────────────────────────────────────
+
+  http.post('/api/imgdesc', () => {
+    return HttpResponse.json({
+      ret_code: 200,
+      description: 'Mock VLM：画面中有一只戴着太阳镜的猫坐在海边',
+    })
+  }),
+
+  http.post('/api/suggestion', () => {
+    return HttpResponse.json({
+      ret_code: 200,
+      suggestions: [
+        { label: '太空版', prompt: '把猫放到太空里，周围飘浮陨石', emoji: '🚀', desc: '宇宙冒险' },
+        { label: '水彩风', prompt: '用水彩风格重绘整个场景，柔和色调', emoji: '🎨', desc: '柔和梦幻' },
+      ],
+    })
+  }),
+
+  http.post('/api/prank_suggestions', () => {
+    return HttpResponse.json({
+      ret_code: 200,
+      suggestions: [
+        { label: '混乱', prompt: '一群小动物突然闯入画面', emoji: '😱', desc: '场面失控' },
+        { label: '搞笑', prompt: '主角变成玩偶大小', emoji: '😈', desc: '荒诞缩小' },
+        { label: '惊喜', prompt: '天空掉下巨大蛋糕', emoji: '🙈', desc: '甜蜜轰炸' },
+      ],
+    })
+  }),
+
+  http.post('/api/update_avatar', () => {
+    return HttpResponse.json({
+      ret_code: 200,
+      animation_task_id: 'mock-anim-' + Math.random().toString(36).slice(2, 8),
+    })
+  }),
+
+  // ──────────────────────────────────────────────────────────
   //  plaza WebSocket (core 0.0.4)
   // ──────────────────────────────────────────────────────────
   plazaWsHandler,
