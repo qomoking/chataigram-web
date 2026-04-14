@@ -622,6 +622,17 @@ export const handlers = [
   }),
 
   // ──────────────────────────────────────────────────────────
+  //  cdn-config — geo CDN routing
+  // ──────────────────────────────────────────────────────────
+  http.get('/api/cdn-config', () => {
+    return HttpResponse.json({
+      region: 'mock',
+      cdn_host: 'https://cdn.aiwaves.tech',
+      fallback_host: 'https://static.wdabuliu.com',
+    })
+  }),
+
+  // ──────────────────────────────────────────────────────────
   //  plaza WebSocket (core 0.0.4)
   // ──────────────────────────────────────────────────────────
   plazaWsHandler,

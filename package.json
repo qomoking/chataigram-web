@@ -24,7 +24,8 @@
     "e2e:install": "playwright install --with-deps chromium",
     "mocks:init": "msw init public/ --save",
     "core:bump": "node scripts/bump-core.mjs",
-    "core:status": "git -C packages/core status && echo --- && git -C packages/core log -1 --oneline"
+    "core:status": "git -C packages/core status && echo --- && git -C packages/core log -1 --oneline",
+    "deploy": "bash scripts/deploy-web.sh"
   },
   "dependencies": {
     "@chataigram/core": "workspace:*",

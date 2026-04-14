@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
+import './App.css'
 import type { ReactNode } from 'react'
 import {
   BrowserRouter,
