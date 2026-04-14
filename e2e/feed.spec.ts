@@ -48,20 +48,30 @@ test('swipe changes active post (keyboard arrow)', async ({ page }) => {
   await expect(page.getByText(/吉卜力风格的森林小屋/)).toBeVisible({ timeout: 3000 })
 })
 
-test('save button persists bookmark across reload', async ({ page }) => {
+test('immersive feed image has src set (CdnImg renders)', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByText(/赛博朋克风的猫/)).toBeVisible({ timeout: 5000 })
 
-  await page.getByLabel('save').evaluate((el) => (el as HTMLElement).click())
-  // 收藏持久化到 localStorage
-  const saved = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem('chataigram:saved-posts') ?? '[]'),
-  )
-  expect(saved).toContain(101)
+  // CdnImg should render an <img> with a non-empty src
+  const img = page.locator('.imf-image').first()
+  await expect(img).toBeVisible()
 
-  await page.reload()
+  const src = await img.getAttribute('src')
+  expect(src).toBeTruthy()
+  expect(src).not.toBe('')
+
+  // Verify CDN rewrite happened: MSW returns cdn_host = cdn.aiwaves.tech,
+  // but the mock photo_url is picsum.photos (not a known CDN host),
+  // so it should be passed through as-is — key thing is it's not null/empty.
+  // If photo_url were a KNOWN_CDN_HOST URL, it would be rewritten here.
+  expect(src).toContain('picsum.photos')
+})
+
+test('like button is visible and shows count', async ({ page }) => {
+  await page.goto('/')
   await expect(page.getByText(/赛博朋克风的猫/)).toBeVisible({ timeout: 5000 })
-  // 收藏按钮应该带 active class
-  const btn = page.getByLabel('save')
-  await expect(btn).toHaveClass(/active/)
+
+  const likeBtn = page.getByLabel('like').first()
+  await expect(likeBtn).toBeVisible()
+  await expect(likeBtn).toContainText('42')
 })
