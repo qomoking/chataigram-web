@@ -21,20 +21,18 @@
 
 ## 开放中
 
-### [2026-04-14] useAnimation / fetchAnimationData 收归 core
-- **场景**：PlazaPage 需要按 userId + taskId 拉取 Lottie 动画 JSON，当前逻辑在 `src/utils/animationCache.ts` 里直接 `fetch(/api/animations/${taskId})`，违反"web 不直接发请求"的约定
-- **期望签名**：`useAnimation(userId: number, taskId: string | null): { data: LottieJson | null, isLoading: boolean, error: Error | null }`；或至少提供 `fetchAnimationData(userId, taskId)` 作为命令式 API，内含缓存 + 预取
-- **期望数据**：`LottieJson`（Lottie 标准 JSON，含 `assets` 数组）；缓存策略：同一 userId 只拉一次，支持 `prefetch` 场景（登录后预热）
-- **紧急度**：`mock-ok`（当前 animationCache.ts 能跑，但 ESLint 理论上应该拦 fetch）
-- **提出者**：@king
-- **状态**：`open`
-- **PR / Issue**：
+_(暂无条目)_
 
 ---
 
 ## 最近完成
 
-_(暂无条目)_
+### [2026-04-14] useAnimation / prefetchAnimation 收归 core
+- **场景**：PlazaPage / LoginPage / CreateAvatarPage 的 Lottie 动画拉取
+- **期望签名**：`useAnimation(userId, taskId)` + `prefetchAnimation(qc, userId, taskId)`
+- **提出者**：@king
+- **状态**：`done`
+- **PR / Issue**：qomoking/chataigram-core#3
 
 ---
 

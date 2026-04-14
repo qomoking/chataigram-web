@@ -8,8 +8,10 @@ import {
   type ErrorInfo,
   type ReactNode,
 } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import Lottie from 'lottie-react'
 import {
+  prefetchAnimation,
   useCurrentUser,
   usePlazaSocket,
   type PlazaBumpTarget,
@@ -18,7 +20,6 @@ import {
 import CdnImg from '../../components/CdnImg'
 import TabBar from '../../components/TabBar'
 import { rewriteCdnUrlSync } from '../../utils/cdn'
-import { fetchAnimationData } from '../../utils/animationCache'
 import './PlazaPage.css'
 
 const TAP_THRESHOLD = 8
@@ -43,6 +44,7 @@ type BumpEffect = {
 export default function PlazaPage() {
   const { data: currentUser } = useCurrentUser()
   const myId = currentUser?.id ?? null
+  const qc = useQueryClient()
 
   const [users, setUsers] = useState<PlazaUser[]>([])
   const [myPos, setMyPos] = useState<{ x: number; y: number } | null>(null)
@@ -72,12 +74,12 @@ export default function PlazaPage() {
   const fetchAnimation = useCallback(
     async (userId: number, taskId: string | null) => {
       if (!taskId || animationsRef.current[userId]) return
-      const lottie = await fetchAnimationData(userId, taskId)
+      const lottie = await prefetchAnimation(qc, userId, taskId)
       if (lottie) {
         setAnimations((prev) => ({ ...prev, [userId]: lottie as object }))
       }
     },
-    [],
+    [qc],
   )
 
   const centerOn = useCallback((posX: number, posY: number) => {
