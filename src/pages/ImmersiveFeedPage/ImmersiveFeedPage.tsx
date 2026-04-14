@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  useCommentPost,
   useFeed,
   useLikePost,
   useRemixes,
@@ -35,8 +36,12 @@ export default function ImmersiveFeedPage() {
   const [activeIdx, setActiveIdx] = useState(0)
   const [remixIdx, setRemixIdx] = useState(0) // 0 = 根帖；>0 = 第 N 个 remix
   const [preview, setPreview] = useState<Notification | null>(null)
+  const [commentOpen, setCommentOpen] = useState(false)
+  const [commentText, setCommentText] = useState('')
   const startY = useRef<number | null>(null)
   const startX = useRef<number | null>(null)
+  const commentInputRef = useRef<HTMLInputElement>(null)
+  const comment = useCommentPost()
 
   const posts: Post[] = data?.posts ?? []
   const rootPost = posts[activeIdx] ?? null
@@ -119,6 +124,26 @@ export default function ImmersiveFeedPage() {
   }
 
   const handleNewPost = () => navigate('/create')
+
+  const handleCommentOpen = () => {
+    setCommentOpen(true)
+    setTimeout(() => commentInputRef.current?.focus(), 50)
+  }
+
+  const handleCommentSend = () => {
+    if (!visiblePost || comment.isPending) return
+    const text = commentText.trim()
+    if (!text) return
+    comment.mutate(
+      { postId: visiblePost.id, text },
+      {
+        onSuccess: () => {
+          setCommentText('')
+          setCommentOpen(false)
+        },
+      },
+    )
+  }
 
   if (isLoading) {
     return (
@@ -238,6 +263,26 @@ export default function ImmersiveFeedPage() {
           <button
             type="button"
             className="imf-action-btn"
+            onClick={handleCommentOpen}
+            aria-label="comment"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span>{visiblePost.commentCount}</span>
+          </button>
+          <button
+            type="button"
+            className="imf-action-btn"
             onClick={() => navigate(`/create?ref=${visiblePost.id}`)}
             aria-label="remix"
           >
@@ -292,6 +337,51 @@ export default function ImmersiveFeedPage() {
       )}
 
       {preview && <PreviewCard notification={preview} onClose={() => setPreview(null)} />}
+
+      {commentOpen && (
+        <div
+          className="imf-comment-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCommentOpen(false)
+          }}
+        >
+          <div className="imf-comment-bar" onClick={(e) => e.stopPropagation()}>
+            <input
+              ref={commentInputRef}
+              className="imf-comment-input"
+              placeholder="写条评论…"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCommentSend()
+                if (e.key === 'Escape') setCommentOpen(false)
+              }}
+              maxLength={200}
+            />
+            <button
+              type="button"
+              className={`imf-comment-send ${commentText.trim() && !comment.isPending ? 'active' : ''}`}
+              onClick={handleCommentSend}
+              disabled={!commentText.trim() || comment.isPending}
+              aria-label="send comment"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="12" y1="19" x2="12" y2="5" />
+                <polyline points="5 12 12 5 19 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       <TabBar onCamera={handleNewPost} />
     </div>

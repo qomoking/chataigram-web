@@ -6,7 +6,7 @@ import {
   useState,
 } from 'react'
 import type { Notification } from '@chataigram/core'
-import { useMarkRead } from '@chataigram/core'
+import { useMarkRead, useReact } from '@chataigram/core'
 import Toast from './Toast'
 import PreviewCard from './PreviewCard'
 
@@ -35,6 +35,7 @@ const NotificationManager = forwardRef<NotificationManagerHandle, NotificationMa
     const [activeToast, setActiveToast] = useState<Notification | null>(null)
     const [previewCard, setPreviewCard] = useState<Notification | null>(null)
     const markRead = useMarkRead()
+    const react = useReact()
 
     useImperativeHandle(ref, () => ({
       enqueue(notification) {
@@ -81,10 +82,12 @@ const NotificationManager = forwardRef<NotificationManagerHandle, NotificationMa
 
     const handleLike = useCallback(
       (n: Notification) => {
+        // 向通知原作者送 ❤️（后端写通知 + 可能推 WS 给对方）
+        react.mutate({ recipientId: n.sender.id, notificationId: n.id })
         onLike?.(n)
         setTimeout(() => setPreviewCard(null), 800)
       },
-      [onLike],
+      [onLike, react],
     )
 
     return (

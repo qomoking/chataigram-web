@@ -236,3 +236,74 @@
   width: 20px;
   background: #c084fc;
 }
+
+/* ── comment bar ───────────────────────────────────────── */
+
+.imf-comment-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 84px;
+  animation: imfBackdropIn 0.2s ease both;
+}
+
+@keyframes imfBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.imf-comment-bar {
+  margin: 0 12px 0;
+  width: calc(100% - 24px);
+  background: rgba(30, 30, 30, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 6px 6px 6px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.imf-comment-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 14px;
+  padding: 10px 0;
+}
+
+.imf-comment-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.imf-comment-send {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.12);
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: not-allowed;
+  transition: all 0.15s ease;
+}
+
+.imf-comment-send.active {
+  background: #8b5cf6;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.3);
+}
