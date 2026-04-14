@@ -6,7 +6,10 @@ import {
   useCurrentUser,
   useLogin,
   useRegister,
+  useUserInfo,
 } from '@chataigram/core'
+import CdnImg from '../../components/CdnImg'
+import { prefetchAnimation } from '../../utils/animationCache'
 import './LoginPage.css'
 
 /**
@@ -114,7 +117,10 @@ export default function LoginPage() {
     loginMutation.mutate(
       { username: preset.username, password: cardPassword },
       {
-        onSuccess: () => navigate('/', { replace: true }),
+        onSuccess: ({ user, animationTaskId }) => {
+          prefetchAnimation(user.id, animationTaskId)
+          navigate('/', { replace: true })
+        },
         onError: () => setError('密码错误'),
       },
     )
@@ -127,7 +133,10 @@ export default function LoginPage() {
     loginMutation.mutate(
       { username: loginUsername.trim(), password: loginPassword },
       {
-        onSuccess: () => navigate('/', { replace: true }),
+        onSuccess: ({ user, animationTaskId }) => {
+          prefetchAnimation(user.id, animationTaskId)
+          navigate('/', { replace: true })
+        },
         onError: () => setError('密码错误'),
       },
     )
@@ -153,7 +162,10 @@ export default function LoginPage() {
     registerMutation.mutate(
       { name, username, password: regPassword, inviteCode: regInviteCode.trim() },
       {
-        onSuccess: () => navigate('/', { replace: true }),
+        onSuccess: ({ user, animationTaskId }) => {
+          prefetchAnimation(user.id, animationTaskId)
+          navigate('/', { replace: true })
+        },
         onError: (err) => setError(err.message || '注册失败'),
       },
     )
@@ -239,41 +251,15 @@ export default function LoginPage() {
           <>
             <div className="user-list">
               {PRESET_USERS.map((user, i) => (
-                <button
-                  type="button"
+                <PresetUserCard
                   key={user.id}
-                  className={`user-card ${selected === user.id ? 'user-card--selected' : ''}`}
-                  style={
-                    {
-                      animationDelay: `${i * 80}ms`,
-                      '--user-color': user.color,
-                    } as React.CSSProperties
+                  preset={user}
+                  index={i}
+                  selected={selected === user.id}
+                  onSelect={() =>
+                    setSelected((prev) => (prev === user.id ? null : user.id))
                   }
-                  onClick={() => setSelected((prev) => (prev === user.id ? null : user.id))}
-                >
-                  <div className="user-avatar" style={{ background: user.color }}>
-                    {user.name.charAt(0)}
-                  </div>
-                  <div className="user-info">
-                    <span className="user-name">{user.name}</span>
-                    <span className="user-id">@{user.username}</span>
-                  </div>
-                  {selected === user.id && (
-                    <svg
-                      className="user-check"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                </button>
+                />
               ))}
             </div>
 
@@ -531,5 +517,75 @@ export default function LoginPage() {
         </div>
       )}
     </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+//  PresetUserCard —— 一张预设用户卡片，独立组件以便各自跑 useUserInfo
+// ─────────────────────────────────────────────────────────────
+
+type PresetUser = {
+  id: number
+  username: string
+  name: string
+  color: string
+}
+
+function PresetUserCard({
+  preset,
+  index,
+  selected,
+  onSelect,
+}: {
+  preset: PresetUser
+  index: number
+  selected: boolean
+  onSelect: () => void
+}) {
+  const { data: info } = useUserInfo(preset.id)
+
+  const displayName = info?.name || preset.name
+  const displayUsername = info?.username || preset.username
+  const avatar = info?.avatarUrl ?? null
+
+  return (
+    <button
+      type="button"
+      className={`user-card ${selected ? 'user-card--selected' : ''}`}
+      style={
+        {
+          animationDelay: `${index * 80}ms`,
+          '--user-color': preset.color,
+        } as React.CSSProperties
+      }
+      onClick={onSelect}
+    >
+      <div className="user-avatar" style={{ background: preset.color }}>
+        {avatar ? (
+          <CdnImg src={avatar} alt={displayName} className="user-avatar-img" />
+        ) : (
+          displayName.charAt(0)
+        )}
+      </div>
+      <div className="user-info">
+        <span className="user-name">{displayName}</span>
+        <span className="user-id">@{displayUsername}</span>
+      </div>
+      {selected && (
+        <svg
+          className="user-check"
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )}
+    </button>
   )
 }

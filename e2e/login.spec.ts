@@ -5,8 +5,11 @@ test('card mode: successful login navigates to feed', async ({ page }) => {
   await page.goto('/login')
   await expect(page.getByText('选择账号')).toBeVisible()
 
-  // 选 GhostPixel → 输密码 → 点登录
-  await page.locator('.user-card').filter({ hasText: 'GhostPixel' }).click()
+  // 选第一张 card → 输密码 → 点登录
+  // 注：useUserInfo 会覆盖 preset 的 name 为 mock 数据（user-xxx (mock)），
+  // 用 @ghostpixel 这个 username 锚点更稳（useUserInfo 返的 username 是 user<id>）
+  // 所以直接点第一张卡
+  await page.locator('.user-card').first().click()
   await page.getByPlaceholder('密码').fill('any-password')
   await page.getByRole('button', { name: '登录', exact: true }).click()
 
