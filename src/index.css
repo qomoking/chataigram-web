@@ -5,24 +5,41 @@
 }
 
 :root {
+  /* ── colors ── */
   --bg: #0f0f0f;
   --bg-card: #1a1a1a;
   --bg-elevated: #242424;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
   --accent: #8b5cf6;
   --accent-dim: rgba(139, 92, 246, 0.15);
+  --accent-gradient: linear-gradient(135deg, #8b5cf6, #ec4899);
   --text: #f0f0f0;
   --text-secondary: #888;
+  --text-tertiary: #555;
   --border: #2a2a2a;
+  --danger: #ff3b30;
+  --success: #10b981;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
 
+  /* ── radii ── */
   --radius-pill: 50px;
   --radius-card: 18px;
   --radius-input: 14px;
+  --radius-sm: 8px;
+
+  /* ── glass ── */
   --glass-bg: rgba(255, 255, 255, 0.07);
   --glass-border: rgba(255, 255, 255, 0.1);
+
+  /* ── timing ── */
   --t-fast: 0.12s;
   --t-base: 0.25s;
+
+  /* ── layout ── */
+  --tabbar-height: 60px;
+  --tabbar-total: calc(var(--tabbar-height) + var(--safe-bottom));
+  --page-header-height: 48px;
 }
 
 html, body {

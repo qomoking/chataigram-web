@@ -1,0 +1,47 @@
+.page-header {
+  display: flex;
+  align-items: center;
+  height: var(--page-header-height);
+  padding: 0 4px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+}
+
+.page-header-back {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.page-header-back:active {
+  background: var(--glass-bg);
+}
+
+.page-header-title {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+  margin-right: 40px; /* balance the back button */
+}
+
+.page-header--transparent {
+  background: transparent;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+
+.page-header--transparent .page-header-back {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}

@@ -150,7 +150,6 @@ export default function ProfilePage() {
             badge={unread > 0 ? (unread > 99 ? '99+' : String(unread)) : null}
           />
           <Entry icon="🎨" label={t('profile.works')} onClick={() => navigate('/works')} />
-          <Entry icon="🌐" label={t('profile.plaza')} onClick={() => navigate('/plaza')} />
           <Entry icon="🎟️" label={t('profile.invites')} onClick={() => navigate('/invites')} />
         </div>
       </div>

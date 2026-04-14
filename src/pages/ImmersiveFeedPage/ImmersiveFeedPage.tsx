@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+
 import {
   useCommentPost,
   useFeed,
@@ -129,7 +129,7 @@ export default function ImmersiveFeedPage() {
   const { data, isLoading, error } = useFeed({ limit: 30, sortMode })
   const like = useLikePost()
   const { unseenList, dismissAll } = useUnseenNotifications()
-  const navigate = useNavigate()
+
 
   const [activeIdx, setActiveIdx] = useState(0)
   const [remixIdx, setRemixIdx] = useState(0)
@@ -369,7 +369,7 @@ export default function ImmersiveFeedPage() {
     like.mutate(visiblePost.id)
   }
 
-  const handleNewPost = () => navigate('/create')
+
 
   const handleVoiceRemix = useCallback(
     (text: string) => {
@@ -427,7 +427,7 @@ export default function ImmersiveFeedPage() {
     return (
       <div className="imf-page">
         <div className="imf-loading"><div className="imf-spinner" /></div>
-        <TabBar onCamera={handleNewPost} />
+        <TabBar />
       </div>
     )
   }
@@ -438,7 +438,7 @@ export default function ImmersiveFeedPage() {
           <div>{t('feed.loadError')}</div>
           <div style={{ fontSize: 12, opacity: 0.6, marginTop: 8 }}>{String(error)}</div>
         </div>
-        <TabBar onCamera={handleNewPost} />
+        <TabBar />
       </div>
     )
   }
@@ -449,7 +449,7 @@ export default function ImmersiveFeedPage() {
           <div className="imf-empty-icon">✦</div>
           <p>{t('feed.noPostsHint')}</p>
         </div>
-        <TabBar onCamera={handleNewPost} />
+        <TabBar />
       </div>
     )
   }
@@ -1050,7 +1050,7 @@ export default function ImmersiveFeedPage() {
         </div>
       )}
 
-      <TabBar onCamera={handleNewPost} />
+      <TabBar />
     </div>
   )
 }

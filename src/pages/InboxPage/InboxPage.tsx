@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useInbox, useMarkRead, type Notification } from '@chataigram/core'
 import CdnImg from '../../components/CdnImg'
 import PreviewCard from '../../components/PreviewCard'
+import PageHeader from '../../components/PageHeader'
+import { ListSkeleton } from '../../components/Skeleton'
 import { localizeNotifContent, t, type NotifContent } from '../../utils/i18n'
 import './InboxPage.css'
 
@@ -17,7 +18,6 @@ function timeAgo(iso: string): string {
 }
 
 export default function InboxPage() {
-  const navigate = useNavigate()
   const { data, isLoading } = useInbox({ limit: 50 })
   const markRead = useMarkRead()
   const [preview, setPreview] = useState<Notification | null>(null)
@@ -34,25 +34,10 @@ export default function InboxPage() {
 
   return (
     <div className="inbox-page">
-      <div className="inbox-topbar">
-        <button type="button" className="inbox-back" onClick={() => navigate(-1)} aria-label="back">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <span className="inbox-title">{t('profile.inbox')}</span>
-      </div>
+      <PageHeader title={t('profile.inbox')} backTo="/profile" />
 
       <div className="inbox-scroll">
-        {isLoading && <div className="inbox-empty">{t('inbox.loading')}</div>}
+        {isLoading && <ListSkeleton count={5} />}
 
         {!isLoading && notifications.length === 0 && (
           <div className="inbox-empty">

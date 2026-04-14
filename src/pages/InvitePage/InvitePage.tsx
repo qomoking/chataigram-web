@@ -1,15 +1,14 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   useCurrentUser,
   useGenerateInviteCode,
   useMyInviteCodes,
 } from '@chataigram/core'
+import PageHeader from '../../components/PageHeader'
 import { t } from '../../utils/i18n'
 import './InvitePage.css'
 
 export default function InvitePage() {
-  const navigate = useNavigate()
   const { data: user } = useCurrentUser()
   const { data, isLoading } = useMyInviteCodes(user?.id ?? null)
   const generate = useGenerateInviteCode()
@@ -56,22 +55,7 @@ export default function InvitePage() {
 
   return (
     <div className="invite-page">
-      <div className="invite-topbar">
-        <button type="button" className="invite-back" onClick={() => navigate(-1)} aria-label="back">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <span className="invite-topbar-title">{t('invite.title')}</span>
-      </div>
+      <PageHeader title={t('invite.title')} backTo="/profile" />
 
       <div className="invite-scroll">
         {isLoading ? (

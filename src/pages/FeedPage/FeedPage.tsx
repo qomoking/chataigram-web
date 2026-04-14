@@ -1,15 +1,14 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useFeed, useLikePost } from '@chataigram/core'
 import type { Post } from '@chataigram/core'
 import { useSavedPosts } from '../../hooks/useSavedPosts'
 import { HeartIcon, BookmarkIcon } from '../../components/icons'
 import CdnImg from '../../components/CdnImg'
+import { FeedSkeleton } from '../../components/Skeleton'
 import TabBar from '../../components/TabBar'
+import { pickColor } from '../../utils/color'
 import styles from './FeedPage.module.css'
 
-/**
- * Feed 页 —— 公开 feed 流，masonry 布局 + 点赞 + 收藏 + Lightbox + TabBar。
- */
 export default function FeedPage() {
   const { data, isLoading, error } = useFeed({ limit: 20 })
   const like = useLikePost()
@@ -39,7 +38,7 @@ export default function FeedPage() {
         <span className={styles.logo}>ChatAigram</span>
       </header>
 
-      {isLoading && <div className={styles.empty}>Loading…</div>}
+      {isLoading && <FeedSkeleton />}
 
       {error && (
         <div className={styles.error}>
@@ -177,8 +176,7 @@ type LightboxProps = {
 }
 
 function Lightbox({ post, isSaved, onLike, onSave, onClose }: LightboxProps) {
-  // 下滑关闭
-  const startY = { current: 0 as number }
+  const startY = useRef(0)
   const onTouchStart = (e: React.TouchEvent) => {
     startY.current = e.touches[0]?.clientY ?? 0
   }
@@ -247,9 +245,4 @@ function Lightbox({ post, isSaved, onLike, onSave, onClose }: LightboxProps) {
       </div>
     </div>
   )
-}
-
-function pickColor(seed: number): string {
-  const palette = ['#8b5cf6', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#ef4444']
-  return palette[Math.abs(seed) % palette.length] ?? palette[0]!
 }

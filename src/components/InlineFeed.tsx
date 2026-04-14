@@ -3,6 +3,7 @@ import type { Post } from '@chataigram/core'
 import { useFeed, useLikePost } from '@chataigram/core'
 import { useSavedPosts } from '../hooks/useSavedPosts'
 import { t } from '../utils/i18n'
+import { pickColor } from '../utils/color'
 import CdnImg from './CdnImg'
 import { HeartIcon } from './icons'
 import './InlineFeed.css'
@@ -105,7 +106,3 @@ export default function InlineFeed() {
   )
 }
 
-function pickColor(seed: number): string {
-  const palette = ['#8b5cf6', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#ef4444']
-  return palette[Math.abs(seed) % palette.length] ?? palette[0]!
-}

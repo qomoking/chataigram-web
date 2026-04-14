@@ -1,9 +1,8 @@
 .page {
   max-width: 880px;
   margin: 0 auto;
-  padding: 12px 12px 80px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #1a1a1a;
+  padding: 12px 12px calc(var(--tabbar-total) + 12px);
+  color: var(--text);
 }
 
 .topbar {
@@ -17,7 +16,7 @@
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  background: linear-gradient(90deg, #8b5cf6, #ec4899);
+  background: var(--accent-gradient);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -26,7 +25,7 @@
 .empty {
   text-align: center;
   padding: 80px 16px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .emptyIcon {
@@ -36,10 +35,10 @@
 
 .error {
   padding: 16px;
-  border-radius: 8px;
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 /* ── masonry ──────────────────────────────────────────── */
@@ -65,12 +64,12 @@
 /* ── card ─────────────────────────────────────────────── */
 
 .card {
-  background: #fff;
-  border-radius: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: transform 0.15s ease;
+  border: 1px solid var(--border);
 }
 .card:hover {
   transform: translateY(-2px);
@@ -79,7 +78,7 @@
 .imgWrap {
   position: relative;
   width: 100%;
-  background: #f3f4f6;
+  background: var(--bg-elevated);
   aspect-ratio: 1;
   overflow: hidden;
 }
@@ -97,7 +96,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: var(--text-tertiary);
   font-size: 13px;
 }
 
@@ -105,7 +104,9 @@
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: none;
   width: 32px;
   height: 32px;
@@ -115,10 +116,10 @@
   justify-content: center;
   cursor: pointer;
   transition: transform 0.2s ease;
-  color: #4b5563;
+  color: var(--text);
 }
 .likeOverlay:hover {
-  background: #fff;
+  background: rgba(0, 0, 0, 0.7);
 }
 .likeOverlay.bumped {
   transform: scale(1.25);
@@ -136,7 +137,7 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .dot {
@@ -152,7 +153,7 @@
 }
 
 .authorName {
-  color: #1f2937;
+  color: var(--text);
   font-weight: 500;
 }
 
@@ -160,7 +161,7 @@
   margin: 0;
   font-size: 13px;
   line-height: 1.4;
-  color: #374151;
+  color: var(--text-secondary);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -180,20 +181,20 @@
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
   transition: color 0.15s ease;
 }
 .actionBtn:hover {
-  color: #1f2937;
+  color: var(--text);
 }
 .actionBtn.liked {
   color: #ef4444;
 }
 .actionBtn.saved {
-  color: #8b5cf6;
+  color: var(--accent);
 }
 
 /* ── Lightbox ──────────────────────────────────────────── */
@@ -205,17 +206,13 @@
   background: rgba(0, 0, 0, 0.95);
   display: flex;
   flex-direction: column;
-  color: #fff;
+  color: var(--text);
   animation: lbIn 0.2s ease-out both;
 }
 
 @keyframes lbIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .lbHeader {
@@ -239,7 +236,7 @@
 }
 
 .lbTime {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-tertiary);
   font-size: 11px;
   margin-left: 4px;
 }
@@ -250,7 +247,7 @@
   border-radius: 18px;
   background: rgba(0, 0, 0, 0.45);
   border: none;
-  color: #fff;
+  color: var(--text);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -275,7 +272,7 @@
 .lbPrompt {
   padding: 12px 16px;
   background: rgba(0, 0, 0, 0.6);
-  color: #fff;
+  color: var(--text);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -293,7 +290,7 @@
   gap: 6px;
   background: none;
   border: none;
-  color: #fff;
+  color: var(--text);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -301,5 +298,5 @@
 }
 
 .lbActionBtn.saved {
-  color: #8b5cf6;
+  color: var(--accent);
 }

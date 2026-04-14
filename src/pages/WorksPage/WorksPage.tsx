@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import {
   useCurrentUser,
   useDeletePost,
@@ -8,6 +7,8 @@ import {
   type UserPost,
 } from '@chataigram/core'
 import CdnImg from '../../components/CdnImg'
+import PageHeader from '../../components/PageHeader'
+import { ListSkeleton } from '../../components/Skeleton'
 import { t } from '../../utils/i18n'
 import './WorksPage.css'
 
@@ -18,7 +19,6 @@ type Tab = 'published' | 'drafts'
  * 点击出 lightbox。对齐 frontend/WorksPage.jsx 行为。
  */
 export default function WorksPage() {
-  const navigate = useNavigate()
   const { data: currentUser } = useCurrentUser()
   const [tab, setTab] = useState<Tab>('published')
   const [lightbox, setLightbox] = useState<(UserPost & { isDraft: boolean }) | null>(null)
@@ -129,22 +129,7 @@ export default function WorksPage() {
 
   return (
     <div className="works-page">
-      <div className="works-topbar">
-        <button type="button" className="works-back" onClick={() => navigate(-1)} aria-label="back">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <span className="works-title">{t('profile.works')}</span>
-      </div>
+      <PageHeader title={t('profile.works')} backTo="/profile" />
 
       <div className="works-tabs">
         <button
@@ -167,9 +152,7 @@ export default function WorksPage() {
 
       <div className="works-scroll">
         {loading ? (
-          <div className="works-empty">
-            <div className="works-spinner" />
-          </div>
+          <ListSkeleton count={6} />
         ) : items.length === 0 ? (
           <div className="works-empty">
             <span className="works-empty-icon">{tab === 'published' ? '✦' : '◻'}</span>
