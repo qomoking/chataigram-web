@@ -582,6 +582,46 @@ export const handlers = [
   }),
 
   // ──────────────────────────────────────────────────────────
+  //  intent / analyze / search / onboarding (core 0.0.9)
+  // ──────────────────────────────────────────────────────────
+
+  http.post('/api/intent', async ({ request }) => {
+    const body = (await request.json().catch(() => null)) as { prompt?: string } | null
+    const p = body?.prompt?.toLowerCase() ?? ''
+    const intent = p.includes('feed') || p.includes('trending')
+      ? 'feed'
+      : p.includes('分析') || p.includes('history')
+        ? 'analyze_prompt'
+        : 'generate'
+    return HttpResponse.json({ ret_code: 200, intent })
+  }),
+
+  http.post('/api/analyze_history', () => {
+    return HttpResponse.json({
+      ret_code: 200,
+      result: 'Try a Studio Ghibli inspired sunset scene with warm tones',
+    })
+  }),
+
+  http.get('/api/search_users', ({ request }) => {
+    const q = new URL(request.url).searchParams.get('q') ?? ''
+    const users = [
+      { id: 9001, name: 'Alice', username: 'alice', avatar: 'https://picsum.photos/seed/a/100' },
+      { id: 9002, name: 'Bob', username: 'bob', avatar: 'https://picsum.photos/seed/b/100' },
+      { id: 9003, name: 'Carol', username: 'carol', avatar: null },
+    ].filter((u) => !q || u.name.toLowerCase().includes(q.toLowerCase()))
+    return HttpResponse.json({ users, is_recommended: !q })
+  }),
+
+  http.post('/api/onboarding', () => {
+    return HttpResponse.json({
+      ret_code: 200,
+      welcome_text: '欢迎来到 ChatAigram！让我帮你创造独一无二的头像和作品。',
+      avatar_url: 'https://picsum.photos/seed/onboard/400/400',
+    })
+  }),
+
+  // ──────────────────────────────────────────────────────────
   //  plaza WebSocket (core 0.0.4)
   // ──────────────────────────────────────────────────────────
   plazaWsHandler,

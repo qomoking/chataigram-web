@@ -23,6 +23,7 @@ import Profile from './pages/Profile/Profile'
 import WorksPage from './pages/WorksPage/WorksPage'
 import Home from './pages/Home/Home'
 import Create from './pages/Create/Create'
+import CreatePage from './pages/CreatePage/CreatePage'
 import CreateAvatarPage from './pages/CreateAvatarPage/CreateAvatarPage'
 import PlazaPage from './pages/PlazaPage/PlazaPage'
 import ImmersiveFeedPage from './pages/ImmersiveFeedPage/ImmersiveFeedPage'
@@ -74,7 +75,8 @@ function Shell() {
           <Route path="/" element={<ImmersiveFeedPage />} />
           <Route path="/feed" element={<FeedPage />} />
           <Route path="/home" element={<Home />} />
-          <Route path="/create" element={<Create />} />
+          <Route path="/create" element={<CreatePage />} />
+          <Route path="/create/simple" element={<Create />} />
           <Route path="/create-avatar" element={<CreateAvatarPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<Profile />} />
