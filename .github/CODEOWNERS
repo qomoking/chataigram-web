@@ -3,8 +3,20 @@
 #  默认设计师 + 工程师共同 own，但基础设施只允许工程师改。
 # ============================================================
 
-# 默认：UI 代码 designers + engineers 都能 review
+# 默认：UI 代码 designers + engineers 都能 review（任一 approve 即可）
 *                       @yinxinghuan @qomoking
+
+# 视觉 / 交互为主：设计师优先 review
+/src/pages/             @yinxinghuan @qomoking
+/src/components/        @yinxinghuan @qomoking
+/src/layouts/           @yinxinghuan @qomoking
+/src/styles/            @yinxinghuan @qomoking
+/public/                @yinxinghuan @qomoking
+
+# 数据契约 / mock：工程师 review（影响和后端 / core 对齐）
+/src/mocks/             @qomoking
+/src/hooks/             @qomoking
+/docs/core-wishlist.md  @qomoking
 
 # 基础设施：必须工程师 review
 /.github/               @qomoking
