@@ -95,12 +95,17 @@ const EN: Dict = {
   'onboarding.starter2':       'Dreamy watercolor portrait',
 
   // ── Feed ─────────────────────────────────────────────────────────────────
-  'feed.trending':    'Trending',
-  'feed.noPosts':     'No posts yet',
-  'feed.justNow':     'just now',
-  'feed.minutesAgo':  '{{m}}m ago',
-  'feed.hoursAgo':    '{{h}}h ago',
-  'feed.daysAgo':     '{{d}}d ago',
+  'feed.trending':         'Trending',
+  'feed.noPosts':          'No posts yet',
+  'feed.noPostsHint':      'No posts yet, go create one',
+  'feed.loadError':        'Load failed',
+  'feed.backToOriginal':   '← Back to original',
+  'feed.remixHint':        '→ Swipe right for {{n}} remixes',
+  'feed.commentPlaceholder': 'Write a comment…',
+  'feed.justNow':          'just now',
+  'feed.minutesAgo':       '{{m}}m ago',
+  'feed.hoursAgo':         '{{h}}h ago',
+  'feed.daysAgo':          '{{d}}d ago',
 
   // ── Profile ──────────────────────────────────────────────────────────────
   'profile.switchAccount':    'Switch Account',
@@ -332,12 +337,17 @@ const ZH: Dict = {
   'onboarding.starter2':       '梦幻水彩人像插画',
 
   // ── Feed ─────────────────────────────────────────────────────────────────
-  'feed.trending':    '热门',
-  'feed.noPosts':     '暂无帖子',
-  'feed.justNow':     '刚刚',
-  'feed.minutesAgo':  '{{m}}分钟前',
-  'feed.hoursAgo':    '{{h}}小时前',
-  'feed.daysAgo':     '{{d}}天前',
+  'feed.trending':         '热门',
+  'feed.noPosts':          '暂无帖子',
+  'feed.noPostsHint':      '暂无帖子，去创建一个吧',
+  'feed.loadError':        '加载失败',
+  'feed.backToOriginal':   '← 回到原帖',
+  'feed.remixHint':        '→ 右滑看 {{n}} 条 remix',
+  'feed.commentPlaceholder': '写条评论…',
+  'feed.justNow':          '刚刚',
+  'feed.minutesAgo':       '{{m}}分钟前',
+  'feed.hoursAgo':         '{{h}}小时前',
+  'feed.daysAgo':          '{{d}}天前',
 
   // ── Profile ──────────────────────────────────────────────────────────────
   'profile.switchAccount':    '切换账户',

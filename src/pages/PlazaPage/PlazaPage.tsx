@@ -160,7 +160,7 @@ export default function PlazaPage() {
     [],
   )
 
-  const { send } = usePlazaSocket(myId, {
+  const { send, connected } = usePlazaSocket(myId, {
     onInit,
     onUserJoin,
     onUserLeave,
@@ -308,7 +308,9 @@ export default function PlazaPage() {
     <div className="plaza-page">
       <div className="plaza-header">
         <span className="plaza-title">Plaza</span>
-        <span className="plaza-online-badge">{users.length} online</span>
+        <span className={`plaza-online-badge${connected ? '' : ' disconnected'}`}>
+          {connected ? `${users.length} online` : 'connecting...'}
+        </span>
         <button
           type="button"
           className="plaza-locate-btn"
@@ -403,7 +405,16 @@ export default function PlazaPage() {
           </div>
         ))}
 
-        {otherCount === 0 && myPos && (
+        {!connected && users.length === 0 && (
+          <div className="plaza-empty">
+            <div className="plaza-empty-icon">~</div>
+            <div className="plaza-empty-text">
+              connecting to plaza...
+            </div>
+          </div>
+        )}
+
+        {connected && otherCount === 0 && myPos && (
           <div className="plaza-empty">
             <div className="plaza-empty-icon">~</div>
             <div className="plaza-empty-text">
