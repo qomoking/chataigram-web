@@ -173,3 +173,66 @@
   height: 20px;
   background: #fff;
 }
+
+/* ── remix crumb ───────────────────────────────────────── */
+
+.imf-remix-crumb {
+  position: absolute;
+  top: 14px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 12px;
+  max-width: fit-content;
+  pointer-events: auto;
+}
+
+.imf-remix-label {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #c084fc;
+}
+
+.imf-remix-hint {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.imf-crumb-back {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.imf-remix-dots {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.imf-remix-dot {
+  width: 6px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.imf-remix-dot.active {
+  width: 20px;
+  background: #c084fc;
+}

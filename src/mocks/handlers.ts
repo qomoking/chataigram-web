@@ -220,6 +220,51 @@ export const handlers = [
     return HttpResponse.json({ ret_code: 200, task_id: taskId })
   }),
 
+  // 某帖的 remix 子树（core 0.0.7 useRemixes）
+  http.get('/api/posts/:postId/remixes', ({ params }) => {
+    const postId = Number(params['postId'])
+    const remixes = Array.from({ length: 3 }).map((_, i) => ({
+      id: postId * 10 + i + 1,
+      pid: postId,
+      telegram_id: 2000 + i,
+      photo_url: `https://picsum.photos/seed/r${postId}-${i}/600/600`,
+      content: i === 0 ? 'remix 变体 A' : i === 1 ? 'remix 变体 B' : '另一个角度',
+      type: 2,
+      like_num: 3 + i,
+      relay_num: 0,
+      comment_num: 0,
+      share_num: 0,
+      optional: null,
+      has_remixes: false,
+    }))
+    return HttpResponse.json({ ret_code: 200, remixes })
+  }),
+
+  // 评论（core 0.0.7 useCommentPost）
+  http.post('/api/posts/:postId/comment', ({ params }) => {
+    const postId = Number(params['postId'])
+    const post = FAKE_POSTS.find((p) => p.id === postId)
+    if (post) post.comment_num += 1
+    return HttpResponse.json({
+      ret_code: 200,
+      comment_num: post?.comment_num ?? 1,
+    })
+  }),
+
+  // 通知 ❤️ 回应（core 0.0.7 useReact）
+  http.post('/api/notifications/react', () => {
+    return HttpResponse.json({ ret_code: 200 })
+  }),
+
+  // 上传图片（core 0.0.7 useUploadImage）
+  http.post('/api/upload', () => {
+    const seed = Math.random().toString(36).slice(2, 8)
+    return HttpResponse.json({
+      ret_code: 200,
+      image_url: `https://picsum.photos/seed/up-${seed}/800/800`,
+    })
+  }),
+
   http.post('/api/posts/ghibli', () => {
     const taskId = 'ghibli-' + Math.random().toString(36).slice(2, 10)
     return HttpResponse.json({ ret_code: 200, task_id: taskId })

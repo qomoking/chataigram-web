@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   useFeed,
   useLikePost,
+  useRemixes,
   type Post,
+  type Notification,
 } from '@chataigram/core'
 import CdnImg from '../../components/CdnImg'
 import TabBar from '../../components/TabBar'
@@ -12,21 +14,16 @@ import UnseenBubble from '../../components/UnseenBubble'
 import useUnseenNotifications from '../../hooks/useUnseenNotifications'
 import { useSavedPosts } from '../../hooks/useSavedPosts'
 import { HeartIcon, BookmarkIcon } from '../../components/icons'
-import type { Notification } from '@chataigram/core'
 import './ImmersiveFeedPage.css'
 
 const SWIPE_THRESHOLD = 40
 
 /**
- * 沉浸式 feed —— 一条帖子占满屏，纵向滑动切换。
+ * 沉浸式 feed —— 一条帖子占满屏。
  *
- * 简化版自 frontend/ImmersiveFeedPage.jsx（1808 行 → ~280 行）。
- * 对齐的：纵向 swipe / 全屏图 / 点赞乐观更新 / 收藏 / UnseenBubble / TabBar
- * 未对齐（TODO）：
- *   - 横向 swipe 看 remix 子树
- *   - 双击 prank suggestions
- *   - 语音 remix
- *   - 评论输入
+ * - 纵向 swipe / wheel / ArrowDown/Up：切换主 feed 里的下一条
+ * - 横向 swipe / ArrowLeft/Right：切换当前帖的 remix 子树（parentId → 回到根）
+ * - 点赞 / 收藏 / remix 按钮（remix 跳 /create?ref=）
  */
 export default function ImmersiveFeedPage() {
   const { data, isLoading, error } = useFeed({ limit: 30 })
@@ -34,42 +31,80 @@ export default function ImmersiveFeedPage() {
   const { isSaved, toggle: toggleSave } = useSavedPosts()
   const { unseenList, dismissAll } = useUnseenNotifications()
   const navigate = useNavigate()
+
   const [activeIdx, setActiveIdx] = useState(0)
+  const [remixIdx, setRemixIdx] = useState(0) // 0 = 根帖；>0 = 第 N 个 remix
   const [preview, setPreview] = useState<Notification | null>(null)
   const startY = useRef<number | null>(null)
+  const startX = useRef<number | null>(null)
 
   const posts: Post[] = data?.posts ?? []
-  const activePost = posts[activeIdx] ?? null
+  const rootPost = posts[activeIdx] ?? null
+  const { data: remixes } = useRemixes(rootPost?.id ?? null)
+
+  // 当前实际展示的帖子（根 or 某个 remix）
+  const visiblePost = useMemo<Post | null>(() => {
+    if (!rootPost) return null
+    if (remixIdx === 0) return rootPost
+    const r = (remixes ?? [])[remixIdx - 1]
+    return r ?? rootPost
+  }, [rootPost, remixIdx, remixes])
+
+  const remixTotal = 1 + (remixes?.length ?? 0) // 根 + N remixes
 
   const swipeUp = useCallback(() => {
     setActiveIdx((i) => Math.min(i + 1, Math.max(posts.length - 1, 0)))
+    setRemixIdx(0)
   }, [posts.length])
   const swipeDown = useCallback(() => {
     setActiveIdx((i) => Math.max(i - 1, 0))
+    setRemixIdx(0)
+  }, [])
+  const swipeLeft = useCallback(() => {
+    // 向左：看下一个 remix
+    setRemixIdx((i) => Math.min(i + 1, remixTotal - 1))
+  }, [remixTotal])
+  const swipeRight = useCallback(() => {
+    setRemixIdx((i) => Math.max(i - 1, 0))
   }, [])
 
-  // 键盘方向键也切（桌面测试友好）
+  // 键盘（桌面测试友好）
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowUp') swipeDown()
-      if (e.key === 'ArrowDown' || e.key === ' ') swipeUp()
+      else if (e.key === 'ArrowDown' || e.key === ' ') swipeUp()
+      else if (e.key === 'ArrowLeft') swipeRight()
+      else if (e.key === 'ArrowRight') swipeLeft()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [swipeUp, swipeDown])
+  }, [swipeUp, swipeDown, swipeLeft, swipeRight])
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startY.current = e.touches[0]?.clientY ?? null
+    startX.current = e.touches[0]?.clientX ?? null
   }
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (startY.current == null) return
-    const end = e.changedTouches[0]?.clientY
-    if (end == null) return
-    const dy = end - startY.current
-    startY.current = null
-    if (Math.abs(dy) < SWIPE_THRESHOLD) return
-    if (dy < 0) swipeUp()
-    else swipeDown()
+    const endY = e.changedTouches[0]?.clientY
+    const endX = e.changedTouches[0]?.clientX
+    if (startY.current == null || startX.current == null || endY == null || endX == null) {
+      startY.current = startX.current = null
+      return
+    }
+    const dy = endY - startY.current
+    const dx = endX - startX.current
+    startY.current = startX.current = null
+
+    // 以主轴方向判断纵向 vs 横向
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (Math.abs(dx) < SWIPE_THRESHOLD) return
+      if (dx < 0) swipeLeft()
+      else swipeRight()
+    } else {
+      if (Math.abs(dy) < SWIPE_THRESHOLD) return
+      if (dy < 0) swipeUp()
+      else swipeDown()
+    }
   }
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -79,13 +114,11 @@ export default function ImmersiveFeedPage() {
   }
 
   const handleLike = () => {
-    if (!activePost) return
-    like.mutate(activePost.id)
+    if (!visiblePost) return
+    like.mutate(visiblePost.id)
   }
 
-  const handleNewPost = () => {
-    navigate('/create')
-  }
+  const handleNewPost = () => navigate('/create')
 
   if (isLoading) {
     return (
@@ -100,15 +133,13 @@ export default function ImmersiveFeedPage() {
       <div className="imf-page">
         <div className="imf-empty">
           <div>加载失败</div>
-          <div style={{ fontSize: 12, opacity: 0.6, marginTop: 8 }}>
-            {String(error)}
-          </div>
+          <div style={{ fontSize: 12, opacity: 0.6, marginTop: 8 }}>{String(error)}</div>
         </div>
         <TabBar onCamera={handleNewPost} />
       </div>
     )
   }
-  if (!activePost) {
+  if (!visiblePost) {
     return (
       <div className="imf-page">
         <div className="imf-empty">
@@ -120,7 +151,8 @@ export default function ImmersiveFeedPage() {
     )
   }
 
-  const saved = isSaved(activePost.id)
+  const saved = isSaved(visiblePost.id)
+  const isRemixView = remixIdx > 0
 
   return (
     <div
@@ -130,15 +162,40 @@ export default function ImmersiveFeedPage() {
       onWheel={handleWheel}
     >
       {/* 主图 */}
-      <div className="imf-image-wrap" key={activePost.id}>
-        {activePost.photoUrl ? (
+      <div className="imf-image-wrap" key={`${visiblePost.id}-${remixIdx}`}>
+        {visiblePost.photoUrl ? (
           <CdnImg
-            src={activePost.photoUrl}
-            alt={activePost.content ?? ''}
+            src={visiblePost.photoUrl}
+            alt={visiblePost.content ?? ''}
             className="imf-image"
           />
         ) : (
           <div className="imf-image-placeholder">无图</div>
+        )}
+
+        {/* 顶部 remix 面包屑 */}
+        {(remixTotal > 1 || isRemixView) && (
+          <div className="imf-remix-crumb">
+            {isRemixView ? (
+              <>
+                <span className="imf-remix-label">REMIX · {remixIdx}/{remixTotal - 1}</span>
+                <button
+                  type="button"
+                  className="imf-crumb-back"
+                  onClick={swipeRight}
+                  aria-label="back to root"
+                >
+                  ← 回到原帖
+                </button>
+              </>
+            ) : (
+              rootPost?.hasRemixes && (
+                <span className="imf-remix-hint">
+                  → 右滑看 {remixTotal - 1} 条 remix
+                </span>
+              )
+            )}
+          </div>
         )}
 
         {/* 底部浮层：作者 + 文案 */}
@@ -147,15 +204,15 @@ export default function ImmersiveFeedPage() {
           <div className="imf-author">
             <div
               className="imf-author-dot"
-              style={{ background: pickColor(activePost.authorId) }}
+              style={{ background: pickColor(visiblePost.authorId) }}
             >
-              {String(activePost.authorId).slice(-1)}
+              {String(visiblePost.authorId).slice(-1)}
             </div>
-            <span>user-{activePost.authorId}</span>
+            <span>user-{visiblePost.authorId}</span>
           </div>
-          {activePost.content && <p className="imf-content">{activePost.content}</p>}
-          {activePost.optional && (
-            <p className="imf-prompt">"{activePost.optional}"</p>
+          {visiblePost.content && <p className="imf-content">{visiblePost.content}</p>}
+          {visiblePost.optional && (
+            <p className="imf-prompt">"{visiblePost.optional}"</p>
           )}
         </div>
 
@@ -168,12 +225,12 @@ export default function ImmersiveFeedPage() {
             aria-label="like"
           >
             <HeartIcon size={26} />
-            <span>{activePost.likeCount}</span>
+            <span>{visiblePost.likeCount}</span>
           </button>
           <button
             type="button"
             className={`imf-action-btn ${saved ? 'active' : ''}`}
-            onClick={() => toggleSave(activePost.id)}
+            onClick={() => toggleSave(visiblePost.id)}
             aria-label="save"
           >
             <BookmarkIcon size={24} filled={saved} />
@@ -181,7 +238,7 @@ export default function ImmersiveFeedPage() {
           <button
             type="button"
             className="imf-action-btn"
-            onClick={() => navigate(`/create?ref=${activePost.id}`)}
+            onClick={() => navigate(`/create?ref=${visiblePost.id}`)}
             aria-label="remix"
           >
             <svg
@@ -210,14 +267,21 @@ export default function ImmersiveFeedPage() {
           .map((_, rel) => {
             const abs = Math.max(0, activeIdx - 2) + rel
             const isActive = abs === activeIdx
-            return (
-              <div
-                key={abs}
-                className={`imf-dot${isActive ? ' active' : ''}`}
-              />
-            )
+            return <div key={abs} className={`imf-dot${isActive ? ' active' : ''}`} />
           })}
       </div>
+
+      {/* 底部横向 remix 指示器 */}
+      {remixTotal > 1 && (
+        <div className="imf-remix-dots">
+          {Array.from({ length: remixTotal }).map((_, i) => (
+            <div
+              key={i}
+              className={`imf-remix-dot${i === remixIdx ? ' active' : ''}`}
+            />
+          ))}
+        </div>
+      )}
 
       {unseenList.length > 0 && (
         <UnseenBubble
