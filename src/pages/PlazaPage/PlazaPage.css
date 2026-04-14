@@ -71,6 +71,18 @@
   50% { opacity: 1; box-shadow: 0 0 10px rgba(52, 211, 153, 0.9); }
 }
 
+.plaza-online-badge.disconnected {
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.plaza-online-badge.disconnected::before {
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: none;
+  animation: none;
+}
+
 .plaza-locate-btn {
   width: 36px;
   height: 36px;

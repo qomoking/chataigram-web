@@ -9,7 +9,7 @@
  */
 import { ws } from 'msw'
 
-const plaza = ws.link('ws://localhost:5173/ws/plaza')
+const plaza = ws.link(/\/ws\/plaza/)
 
 export const plazaWsHandler = plaza.addEventListener('connection', ({ client }) => {
   const myIdFromUrl = new URL(client.url).searchParams.get('user_id')
