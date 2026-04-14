@@ -10,7 +10,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import CdnImg from './CdnImg'
-import * as cdnUtils from '../utils/cdn'
+import * as cdnUtils from '@chataigram/core'
 
 function srcOf(el: HTMLElement) {
   return (el as HTMLImageElement).getAttribute('src')

@@ -32,7 +32,7 @@ import ImmersiveFeedPage from './pages/ImmersiveFeedPage/ImmersiveFeedPage'
 import NotificationManager, {
   type NotificationManagerHandle,
 } from './components/NotificationManager'
-import { prefetchCdnConfig } from './utils/cdn'
+import { prefetchCdnConfig } from '@chataigram/core'
 
 // 启动即预热 CDN 配置
 prefetchCdnConfig()
