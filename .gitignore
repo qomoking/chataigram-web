@@ -15,6 +15,7 @@ coverage
 .vscode
 .idea
 .turbo
+rsy.sh
 
 # 本地联调时生成的 pnpm overrides 标记（别 commit）
 .core-linked
