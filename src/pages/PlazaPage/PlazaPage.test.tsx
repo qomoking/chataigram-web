@@ -17,7 +17,7 @@ let mockCallbacks: Record<string, (...args: unknown[]) => void> = {}
 let mockConnected = false
 
 vi.mock('@chataigram/core', async () => {
-  const actual = await vi.importActual<typeof import('@chataigram/core')>('@chataigram/core')
+  const actual = await vi.importActual('@chataigram/core')
   return {
     ...actual,
     useCurrentUser: () => ({
