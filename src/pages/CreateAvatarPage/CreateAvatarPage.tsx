@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import {
+  prefetchAnimation,
   useCurrentUser,
   useGenerateImage,
   useImageDescription,
@@ -10,7 +12,6 @@ import {
   type SuggestionItem,
 } from '@chataigram/core'
 import CdnImg from '../../components/CdnImg'
-import { prefetchAnimation } from '../../utils/animationCache'
 import './CreateAvatarPage.css'
 
 /**
@@ -42,6 +43,7 @@ const uid = () => String(++_id)
 
 export default function CreateAvatarPage() {
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const { data: currentUser } = useCurrentUser()
   const generate = useGenerateImage()
   const upload = useUploadImage()
@@ -184,7 +186,7 @@ export default function CreateAvatarPage() {
     const url = lastResultUrl.current
     try {
       const { animationTaskId } = await updateAvatar.mutateAsync(url)
-      prefetchAnimation(currentUser.id, animationTaskId)
+      if (animationTaskId) void prefetchAnimation(qc, currentUser.id, animationTaskId)
     } catch {
       /* fallback to local-only */
     }

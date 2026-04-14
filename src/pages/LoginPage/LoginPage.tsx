@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   googleAuthUrl,
+  prefetchAnimation,
   useCheckUsername,
   useCurrentUser,
   useLogin,
@@ -9,7 +11,6 @@ import {
   useUserInfo,
 } from '@chataigram/core'
 import CdnImg from '../../components/CdnImg'
-import { prefetchAnimation } from '../../utils/animationCache'
 import './LoginPage.css'
 
 /**
@@ -37,6 +38,7 @@ const PRESET_USERS = [
 export default function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const qc = useQueryClient()
   const { data: currentUser } = useCurrentUser()
 
   const loginMutation = useLogin()
@@ -118,7 +120,7 @@ export default function LoginPage() {
       { username: preset.username, password: cardPassword },
       {
         onSuccess: ({ user, animationTaskId }) => {
-          prefetchAnimation(user.id, animationTaskId)
+          if (animationTaskId) void prefetchAnimation(qc, user.id, animationTaskId)
           navigate('/', { replace: true })
         },
         onError: () => setError('密码错误'),
@@ -134,7 +136,7 @@ export default function LoginPage() {
       { username: loginUsername.trim(), password: loginPassword },
       {
         onSuccess: ({ user, animationTaskId }) => {
-          prefetchAnimation(user.id, animationTaskId)
+          if (animationTaskId) void prefetchAnimation(qc, user.id, animationTaskId)
           navigate('/', { replace: true })
         },
         onError: () => setError('密码错误'),
@@ -163,7 +165,7 @@ export default function LoginPage() {
       { name, username, password: regPassword, inviteCode: regInviteCode.trim() },
       {
         onSuccess: ({ user, animationTaskId }) => {
-          prefetchAnimation(user.id, animationTaskId)
+          if (animationTaskId) void prefetchAnimation(qc, user.id, animationTaskId)
           navigate('/', { replace: true })
         },
         onError: (err) => setError(err.message || '注册失败'),

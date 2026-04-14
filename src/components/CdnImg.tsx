@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useEffect, useState } from 'react'
 import type { ImgHTMLAttributes, SyntheticEvent } from 'react'
-import { getFallbackUrl, rewriteCdnUrl, rewriteCdnUrlSync } from '../utils/cdn'
+import { getFallbackUrl, rewriteCdnUrl, rewriteCdnUrlSync } from '@chataigram/core'
 
 type CdnImgProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
   src: string | null | undefined
