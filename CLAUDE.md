@@ -140,11 +140,41 @@ pnpm core:status      # 看 packages/core pin 哪个 SHA
 
 ---
 
-## 提交规则
+## GitHub 协作规则（设计师严格遵守）
 
-- 一个 PR = 一件事（一个页面改动 / 一次设计迭代）
-- 不要夹带无关的 refactor / 清理
-- commit message 用"做了什么"，不用"怎么做"
+设计师**只能修改 web 仓**（本仓 `chataigram-web`），core 仓碰不得。下面规则**不可绕过**：
+
+**1. 一切改动走 PR，禁止直推 main**
+
+- 从 `main` 切新分支开发：`git checkout main && git pull && git checkout -b feat/xxx`
+- 改完推到远端，开 PR，等评审合并
+- 不在本地 main 上直接 commit，不 `git push origin main`
+
+**2. 一个 PR = 一件事，保持小**
+
+- 一个页面改动 / 一次设计迭代 / 一个 bug 修复 —— 单一主题
+- 不夹带无关的 refactor、清理、格式化
+- 觉得改动偏大就拆成多个 PR，串行提交
+- commit message 写"做了什么"，不写"怎么做"
+
+**3. PR 合并后，下一项工作前必须同步 main**
+
+```bash
+git checkout main
+git pull origin main           # 拿到自己刚合并的 PR + 别人合并的改动
+git checkout -b feat/next-xxx  # 基于最新 main 切新分支
+```
+
+- 绝不在旧分支上接着做下一件事
+- 绝不基于没合并的 PR 分支切新分支（除非明确依赖）
+
+**4. 提 PR 前本地三连全绿**
+
+```bash
+pnpm lint && pnpm typecheck && pnpm build
+```
+
+失败就修，不绕过 hook、不 `--no-verify`。
 
 ---
 
