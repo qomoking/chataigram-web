@@ -190,8 +190,8 @@
 
 .avatar-img-wrap {
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: 80px;
+  height: 80px;
 }
 
 /* CSS floating animation for avatars without Lottie */
@@ -206,8 +206,8 @@
 }
 
 .avatar-img {
-  width: 56px;
-  height: 56px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(255, 255, 255, 0.18);
@@ -240,8 +240,8 @@
 }
 
 .avatar-fallback {
-  width: 56px;
-  height: 56px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   background: linear-gradient(135deg, #667eea, #764ba2);
   border: 2px solid rgba(255, 255, 255, 0.18);

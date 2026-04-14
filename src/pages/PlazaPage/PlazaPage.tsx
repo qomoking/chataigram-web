@@ -366,7 +366,7 @@ export default function PlazaPage() {
                         animationData={animations[u.id]}
                         loop
                         autoplay
-                        style={{ width: 56, height: 56, borderRadius: '50%' }}
+                        style={{ width: 80, height: 80, borderRadius: '50%' }}
                       />
                     </LottieBoundary>
                   ) : u.avatarUrl ? (
