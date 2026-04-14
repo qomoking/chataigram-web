@@ -6,7 +6,12 @@
   background: #000;
   color: #fff;
   user-select: none;
-  touch-action: pan-y;
+  touch-action: none; /* 完整接管，兼容鼠标拖动 */
+  cursor: grab;
+}
+
+.imf-page:active {
+  cursor: grabbing;
 }
 
 .imf-loading,
@@ -27,6 +32,19 @@
   color: rgba(255, 255, 255, 0.3);
 }
 
+.imf-spinner {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #fff;
+  animation: imfSpin 0.8s linear infinite;
+}
+
+@keyframes imfSpin {
+  to { transform: rotate(360deg); }
+}
+
 .imf-image-wrap {
   position: absolute;
   inset: 0;
@@ -34,12 +52,8 @@
 }
 
 @keyframes imfIn {
-  from {
-    opacity: 0.4;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0.4; }
+  to { opacity: 1; }
 }
 
 .imf-image {
@@ -52,103 +66,198 @@
 .imf-image-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #1a1a1a, #2a1040);
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
   display: flex;
   align-items: center;
   justify-content: center;
   color: rgba(255, 255, 255, 0.4);
 }
 
+/* ── 顶部覆层：用户名 + 头像 ───────────────────────────── */
+
+.imf-gradient-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  background: linear-gradient(rgba(0, 0, 0, 0.55), transparent);
+  pointer-events: none;
+  z-index: 9;
+}
+
+.imf-overlay-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 44px 16px 32px;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.imf-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.imf-username {
+  color: #0ff;
+  font-weight: 700;
+  font-size: 17px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.imf-content {
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 85%;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.imf-avatar-wrap {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(0, 255, 255, 0.8);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #222;
+  margin-left: 12px;
+  pointer-events: auto;
+}
+
+.imf-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imf-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #e040fb, #00bcd4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.imf-avatar-spin {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  animation: imfSpin 0.8s linear infinite;
+}
+
+/* ── 底部覆层：互动数据 ─────────────────────────────────── */
+
 .imf-gradient-bottom {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 40%;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+  height: 45%;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
   pointer-events: none;
+  z-index: 9;
 }
 
 .imf-overlay-bottom {
   position: absolute;
-  left: 16px;
-  right: 80px;
-  bottom: 86px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 40px 16px 78px;
+  z-index: 10;
+  pointer-events: none;
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
 }
 
-.imf-author {
+.imf-stats {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 16px;
+  color: rgba(255, 255, 255, 0.85);
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 500;
+  pointer-events: auto;
 }
 
-.imf-author-dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+.imf-stat {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  border: 2px solid rgba(255, 255, 255, 0.4);
+  gap: 5px;
 }
 
-.imf-content {
-  font-size: 15px;
-  color: #fff;
-  line-height: 1.4;
-  margin: 0;
-}
-
-.imf-prompt {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
-  line-height: 1.4;
-  margin: 0;
-  font-style: italic;
-}
-
-.imf-actions {
-  position: absolute;
-  right: 12px;
-  bottom: 100px;
+.imf-stat-btn {
   display: flex;
-  flex-direction: column;
-  gap: 20px;
   align-items: center;
-}
-
-.imf-action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
+  gap: 5px;
   background: none;
   border: none;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 500;
   cursor: pointer;
-  padding: 4px;
-  transition: transform 0.12s ease;
-  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.6));
+  padding: 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  transition: transform 0.15s;
 }
 
-.imf-action-btn:active {
-  transform: scale(0.92);
+.imf-stat-btn:active {
+  transform: scale(1.2);
 }
 
-.imf-action-btn.active {
-  color: #c084fc;
+.imf-time {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: none;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
+
+/* 魔法棒按钮 */
+.imf-wand-btn {
+  color: #e040fb;
+  filter: drop-shadow(0 0 6px rgba(224, 64, 251, 0.5));
+}
+
+.imf-wand-btn:hover {
+  filter: drop-shadow(0 0 10px rgba(224, 64, 251, 0.8));
+}
+
+.imf-wand-btn.loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.imf-wand-spin {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(224, 64, 251, 0.3);
+  border-top-color: #e040fb;
+  animation: imfSpin 0.8s linear infinite;
+}
+
+/* ── 垂直分页指示 ────────────────────────────────────────── */
 
 .imf-pagination {
   position: absolute;
@@ -159,6 +268,7 @@
   flex-direction: column;
   gap: 4px;
   pointer-events: none;
+  z-index: 30;
 }
 
 .imf-dot {
@@ -174,7 +284,7 @@
   background: #fff;
 }
 
-/* ── remix crumb ───────────────────────────────────────── */
+/* ── remix crumb ─────────────────────────────────────────── */
 
 .imf-remix-crumb {
   position: absolute;
@@ -193,6 +303,7 @@
   border-radius: 12px;
   max-width: fit-content;
   pointer-events: auto;
+  z-index: 15;
 }
 
 .imf-remix-label {
@@ -222,6 +333,7 @@
   display: flex;
   gap: 4px;
   pointer-events: none;
+  z-index: 30;
 }
 
 .imf-remix-dot {
@@ -237,7 +349,7 @@
   background: #c084fc;
 }
 
-/* ── comment bar ───────────────────────────────────────── */
+/* ── 评论输入框 ──────────────────────────────────────────── */
 
 .imf-comment-backdrop {
   position: fixed;
@@ -251,16 +363,12 @@
 }
 
 @keyframes imfBackdropIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .imf-comment-bar {
-  margin: 0 12px 0;
+  margin: 0 12px;
   width: calc(100% - 24px);
   background: rgba(30, 30, 30, 0.92);
   backdrop-filter: blur(20px);
@@ -308,7 +416,7 @@
   box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.3);
 }
 
-/* ── prank panel ───────────────────────────────────────── */
+/* ── 恶搞面板 ────────────────────────────────────────────── */
 
 .imf-prank-backdrop {
   position: fixed;
@@ -362,6 +470,11 @@
 
 .imf-prank-item:active {
   background: rgba(139, 92, 246, 0.2);
+}
+
+.imf-prank-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .imf-prank-emoji {
