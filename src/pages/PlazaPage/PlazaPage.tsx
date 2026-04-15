@@ -23,6 +23,8 @@ import {
 import CdnImg from '../../components/CdnImg'
 import TabBar from '../../components/TabBar'
 import { useLottieSlots } from '../../hooks/useLottieSlots'
+import { isFakeUserId } from '../../fakePresence/fakeUsers'
+import { useFakePresence } from '../../fakePresence/useFakePresence'
 import './PlazaPage.css'
 
 const TAP_THRESHOLD = 8
@@ -182,25 +184,41 @@ export default function PlazaPage() {
     onAnimationReady,
   })
 
+  // ── 撑场子假人：真人 < 4 时混进 3-5 个，画面不空 ────────────────
+  // ready 阶段（Lottie 已进 cache）才注入；selection 在 onInit 后定一次不变
+  const { displayUsers, fakeJoinedAt } = useFakePresence({
+    realUsers: users,
+    currentUserId: myId,
+    myPos,
+    initialized: connected,
+  })
+
+  const mergedJoinedAt = useMemo(
+    () => ({ ...joinedAt, ...fakeJoinedAt }),
+    [joinedAt, fakeJoinedAt],
+  )
+
   // ── Lottie 硬上限选人 ──────────────────────────────────────────
   // 自己永远 Lottie，单独处理；其他在线用户里最多 7 个拿到 Lottie 名额
   const lottieIds = useLottieSlots({
-    users,
+    users: displayUsers,
     viewerContext,
     currentUserId: myId,
-    joinedAt,
+    joinedAt: mergedJoinedAt,
   })
 
   // 只对 lottie 名单内用户（+自己）预取动画。非名单用户用 CdnImg 展示，
   // 省移动端内存 / 带宽。进/出名单时 effect 会自然补齐缺失的预取。
+  // 假人走同一路径：prefetchAnimation 在 react-query cache 命中（idle 阶段已灌入），
+  // 不会发 HTTP，直接写进本地 animations state。
   useEffect(() => {
-    for (const u of users) {
+    for (const u of displayUsers) {
       const needLottie = u.id === myId || lottieIds.has(u.id)
       if (needLottie && u.animationTaskId) {
         void fetchAnimation(u.id, u.animationTaskId)
       }
     }
-  }, [users, lottieIds, myId, fetchAnimation])
+  }, [displayUsers, lottieIds, myId, fetchAnimation])
 
   // ── Pan handling ──────────────────────────────────────────────
   const getEventPos = (e: React.TouchEvent | React.MouseEvent) => {
@@ -250,7 +268,7 @@ export default function PlazaPage() {
       const HIT_RADIUS = 40
       let closest: PlazaUser | null = null
       let closestDist = Infinity
-      for (const u of users) {
+      for (const u of displayUsers) {
         if (u.id === myId) continue
         const dx = worldX - u.posX
         const dy = worldY - u.posY
@@ -262,7 +280,7 @@ export default function PlazaPage() {
       }
       setSelectedUser(closest)
     },
-    [users, myId],
+    [displayUsers, myId],
   )
 
   const handlePointerUp = (e: React.TouchEvent | React.MouseEvent) => {
@@ -283,6 +301,24 @@ export default function PlazaPage() {
 
   // ── Actions ───────────────────────────────────────────────────
   const handleBump = (targetUserId: number) => {
+    if (isFakeUserId(targetUserId)) {
+      // 假人没有真实链路，本地造视觉反馈，不发后端
+      const target = displayUsers.find((u) => u.id === targetUserId)
+      if (target) {
+        const id = Date.now() + Math.random()
+        setBumpEffects((prev) => [
+          ...prev,
+          { id, x: target.posX, y: target.posY, fromName: '你' },
+        ])
+        setTimeout(() => {
+          setBumpEffects((prev) => prev.filter((e) => e.id !== id))
+        }, BUMP_DURATION)
+        setBumpedUid(targetUserId)
+        setTimeout(() => setBumpedUid(null), 600)
+      }
+      setSelectedUser(null)
+      return
+    }
     send({ type: 'bump', targetUserId })
     setSelectedUser(null)
   }
@@ -301,13 +337,13 @@ export default function PlazaPage() {
   // ── Off-screen indicators ─────────────────────────────────────
   const offScreenIndicators = useMemo(() => {
     const vp = viewportRef.current
-    if (!vp || users.length === 0) return []
+    if (!vp || displayUsers.length === 0) return []
     const vpW = vp.clientWidth
     const vpH = vp.clientHeight
     const pan = panRef.current
     const result: { user: PlazaUser; x: number; y: number }[] = []
 
-    for (const u of users) {
+    for (const u of displayUsers) {
       if (u.id === myId) continue
       const sx = u.posX + pan.x
       const sy = u.posY + pan.y
@@ -332,9 +368,9 @@ export default function PlazaPage() {
     }
     return result
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [panVersion, users, myId])
+  }, [panVersion, displayUsers, myId])
 
-  const otherCount = users.filter((u) => u.id !== myId).length
+  const otherCount = displayUsers.filter((u) => u.id !== myId).length
 
   // ── Render ────────────────────────────────────────────────────
   return (
@@ -342,7 +378,7 @@ export default function PlazaPage() {
       <div className="plaza-header">
         <span className="plaza-title">Plaza</span>
         <span className={`plaza-online-badge${connected ? '' : ' disconnected'}`}>
-          {connected ? `${users.length} online` : 'connecting...'}
+          {connected ? `${displayUsers.length} online` : 'connecting...'}
         </span>
         <button
           type="button"
@@ -368,7 +404,7 @@ export default function PlazaPage() {
         }}
       >
         <div className="plaza-world" ref={worldRef}>
-          {users.map((u) => {
+          {displayUsers.map((u) => {
             const isSelf = u.id === myId
             const lottieEligible = isSelf || lottieIds.has(u.id)
             const showLottie = lottieEligible && !!animations[u.id]
@@ -398,7 +434,7 @@ export default function PlazaPage() {
                         animationData={animations[u.id]}
                         loop
                         autoplay
-                        style={{ width: 80, height: 80, borderRadius: '50%' }}
+                        style={{ width: 60, height: 107, borderRadius: 12 }}
                       />
                     </LottieBoundary>
                   ) : u.avatarUrl ? (
@@ -453,7 +489,7 @@ export default function PlazaPage() {
           </div>
         ))}
 
-        {!connected && users.length === 0 && (
+        {!connected && displayUsers.length === 0 && (
           <div className="plaza-empty">
             <div className="plaza-empty-icon">~</div>
             <div className="plaza-empty-text">
