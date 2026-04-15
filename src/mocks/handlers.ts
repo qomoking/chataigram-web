@@ -428,6 +428,77 @@ export const handlers = [
   }),
 
   // ──────────────────────────────────────────────────────────
+  //  Avatar Studio SSE (core 0.0.7)
+  //  /avatar/generate_stream  — 2 步：prompt → generate
+  //  /avatar/iterate_stream   — 3 步：describe → prompt → generate
+  // ──────────────────────────────────────────────────────────
+
+  http.post('/api/avatar/generate_stream', () => {
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (event: string, data: unknown) => {
+          controller.enqueue(
+            encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
+          )
+        }
+        send('step', { step: 'prompt', elapsed: 0 })
+        await new Promise((r) => setTimeout(r, 200))
+        send('step', { step: 'generate', elapsed: 0.4 })
+        await new Promise((r) => setTimeout(r, 300))
+        const seed = Math.random().toString(36).slice(2, 8)
+        send('done', {
+          result_url: `https://picsum.photos/seed/${seed}/360/640`,
+          prompt: `mock full-body avatar prompt seed=${seed}`,
+          timings: { prompt: 0.4, generate: 0.7 },
+        })
+        controller.close()
+      },
+    })
+    return new HttpResponse(stream, {
+      status: 200,
+      headers: {
+        'content-type': 'text/event-stream',
+        'cache-control': 'no-cache',
+      },
+    })
+  }),
+
+  http.post('/api/avatar/iterate_stream', () => {
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (event: string, data: unknown) => {
+          controller.enqueue(
+            encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
+          )
+        }
+        send('step', { step: 'describe', elapsed: 0 })
+        await new Promise((r) => setTimeout(r, 200))
+        send('step', { step: 'prompt', elapsed: 0.3 })
+        await new Promise((r) => setTimeout(r, 200))
+        send('step', { step: 'generate', elapsed: 0.6 })
+        await new Promise((r) => setTimeout(r, 300))
+        const seed = Math.random().toString(36).slice(2, 8)
+        send('done', {
+          result_url: `https://picsum.photos/seed/${seed}/360/640`,
+          prompt: `mock iterated avatar prompt seed=${seed}`,
+          description: 'mock VLM 描述：full body portrait of a person standing',
+          timings: { describe: 0.3, prompt: 0.6, generate: 1.1 },
+        })
+        controller.close()
+      },
+    })
+    return new HttpResponse(stream, {
+      status: 200,
+      headers: {
+        'content-type': 'text/event-stream',
+        'cache-control': 'no-cache',
+      },
+    })
+  }),
+
+  // ──────────────────────────────────────────────────────────
   //  photo → image SSE pipeline (core 0.0.6)
   // ──────────────────────────────────────────────────────────
 

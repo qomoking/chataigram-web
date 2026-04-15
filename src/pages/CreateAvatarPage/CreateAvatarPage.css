@@ -25,142 +25,158 @@
   font-size: 16px; font-weight: 700;
 }
 
-/* ── Messages ── */
-.cav-messages {
+/* ── 卡牌堆 —— 扑克牌堆叠感 ────────────────────────────────── */
+.cav-stack {
   flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 16px 14px;
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
 }
-
-/* ── Welcome ── */
-.cav-welcome {
-  flex: 1;
+/* 装饰性"后面几张牌"的幽灵层，纯视觉 */
+.cav-deck-layer {
+  position: absolute;
+  width: 240px;
+  aspect-ratio: 9 / 16;
+  max-width: 62%;
+  border-radius: 22px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  pointer-events: none;
+}
+.cav-deck-layer--back {
+  transform: translate(-42px, -8px) rotate(-14deg) scale(0.9);
+  opacity: 0.55;
+  z-index: 1;
+}
+.cav-deck-layer--mid {
+  transform: translate(38px, 4px) rotate(12deg) scale(0.94);
+  opacity: 0.78;
+  z-index: 2;
+}
+/* 顶层正儿八经的卡片 */
+.cav-card {
+  position: relative;
+  z-index: 3;
+  width: 240px;
+  max-width: 62%;
+  aspect-ratio: 9 / 16;
+  border-radius: 22px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 40px 0;
 }
-.cav-welcome-avatar {
-  width: 80px; height: 80px; border-radius: 50%;
-  overflow: hidden;
-  background: linear-gradient(135deg, var(--accent), #a78bfa);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 32px; font-weight: 700; color: #fff;
-  border: 3px solid rgba(139,92,246,0.3);
-}
-.cav-welcome-avatar img {
-  width: 100%; height: 100%; object-fit: cover;
-}
-.cav-welcome-title {
-  font-size: 18px; font-weight: 700;
-}
-.cav-welcome-hint {
-  font-size: 13px; color: var(--text-secondary);
+
+/* ── 卡片内容：空 / loading / error / result ─────────────────── */
+.cav-card-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px;
+  padding: 24px 18px;
+  color: var(--text-secondary);
+  font-size: 13px;
   text-align: center; line-height: 1.5;
 }
+.cav-card-emoji { font-size: 40px; }
 
-/* ── Message rows ── */
-.cav-msg-row { display: flex; }
-.cav-msg-row.user { justify-content: flex-end; }
-.cav-msg-row.ai   { justify-content: flex-start; }
-
-/* ── User bubble ── */
-.cav-user-bubble {
-  max-width: 78%;
-  background: var(--accent);
-  border-radius: 18px 18px 4px 18px;
-  overflow: hidden;
-}
-.cav-bubble-img {
-  width: 100%; max-height: 200px;
-  object-fit: cover; display: block;
-}
-.cav-bubble-text {
-  padding: 10px 14px;
-  font-size: 15px; line-height: 1.4; color: #fff;
-  word-break: break-word;
-}
-.cav-bubble-img + .cav-bubble-text {
-  border-top: 1px solid rgba(255,255,255,0.15);
-}
-.cav-bubble-chips {
-  display: flex; flex-wrap: wrap; gap: 5px;
-  padding: 4px 10px 10px;
-}
-.cav-bubble-chip {
-  font-size: 11px; color: rgba(255,255,255,0.8);
-  background: rgba(255,255,255,0.15);
-  border-radius: 10px; padding: 3px 8px;
-}
-
-/* ── AI bubble ── */
-.cav-ai-bubble {
-  max-width: 80%;
-}
-.cav-loading {
-  display: flex; align-items: center; gap: 10px;
-  padding: 13px 16px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 18px 18px 18px 4px;
+.cav-card-loading {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px;
+  padding: 24px;
   font-size: 13px; color: var(--text-secondary);
 }
-.cav-dots { display: flex; gap: 4px; }
-.cav-dots span {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--accent);
-  animation: dot-pulse 1.4s ease-in-out infinite;
-}
-.cav-dots span:nth-child(2) { animation-delay: 0.2s; }
-.cav-dots span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes dot-pulse {
-  0%,60%,100% { transform: scale(0.6); opacity: 0.3; }
-  30%          { transform: scale(1);   opacity: 1;   }
+.cav-spinner {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
 }
 
-.cav-ai-error {
-  padding: 12px 14px;
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.25);
-  border-radius: 18px 18px 18px 4px;
+.cav-card-error {
+  padding: 18px;
   font-size: 13px; color: #f87171;
+  text-align: center;
 }
 
-/* ── AI result ── */
-.cav-result {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 18px 18px 18px 4px;
+.cav-card-result {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: stretch;
 }
-.cav-result-avatar {
-  width: 110px; height: 110px; border-radius: 50%;
-  overflow: hidden;
-  border: 3px solid var(--accent);
-  box-shadow: 0 0 20px rgba(139,92,246,0.35);
+.cav-result-img {
+  width: 100%;
+  flex: 1;
+  object-fit: cover;
+  display: block;
 }
-.cav-result-avatar img {
-  width: 100%; height: 100%; object-fit: cover;
+
+/* 结果卡片底部 "要不要当头像" 选择条 */
+.cav-result-choice {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 10px 12px 12px;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 100%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
-.cav-use-btn {
-  display: flex; align-items: center; gap: 7px;
-  padding: 10px 20px;
+.cav-choice-hint {
+  font-size: 12px; color: rgba(255,255,255,0.92);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.cav-choice-row {
+  display: flex; gap: 8px; width: 100%; justify-content: center;
+}
+.cav-choice-btn {
+  padding: 7px 14px;
   border-radius: 50px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 14px; font-weight: 700;
-  box-shadow: 0 4px 16px rgba(139,92,246,0.4);
-  transition: transform 0.12s;
+  font-size: 13px; font-weight: 700;
+  transition: transform 0.12s, opacity 0.15s;
 }
-.cav-use-btn:active { transform: scale(0.96); }
+.cav-choice-btn:active:not(:disabled) { transform: scale(0.96); }
+.cav-choice-btn:disabled { opacity: 0.5; }
+.cav-choice-confirm {
+  background: var(--accent); color: #fff;
+  box-shadow: 0 4px 14px rgba(139,92,246,0.5);
+}
+.cav-choice-skip {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+/* 结果气泡内的"要不要设为头像"选择块 */
+.cav-result-choice {
+  margin-top: 10px;
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.cav-choice-hint {
+  font-size: 13px; color: var(--text-secondary);
+}
+.cav-choice-row {
+  display: flex; gap: 10px; width: 100%; justify-content: center;
+}
+.cav-choice-btn {
+  padding: 8px 18px;
+  border-radius: 50px;
+  font-size: 14px; font-weight: 700;
+  transition: transform 0.12s, opacity 0.15s;
+}
+.cav-choice-btn:active:not(:disabled) { transform: scale(0.96); }
+.cav-choice-btn:disabled { opacity: 0.5; }
+.cav-choice-confirm {
+  background: var(--accent); color: #fff;
+  box-shadow: 0 4px 16px rgba(139,92,246,0.4);
+}
+.cav-choice-skip {
+  background: var(--bg-elevated); color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
 
 /* ── Input area ── */
 .cav-input-area {
@@ -199,95 +215,51 @@
   font-weight: 600;
 }
 
-/* Text input bar */
-.cav-text-bar { display: flex; flex-direction: column; gap: 6px; }
-.cav-ref-wrap {
-  position: relative; display: inline-flex; align-self: flex-start;
-}
-.cav-ref-thumb {
-  width: 52px; height: 52px; border-radius: 10px;
-  object-fit: cover; border: 1px solid var(--border);
-}
-.cav-ref-ring {
-  position: absolute; inset: -3px; border-radius: 13px;
-  border: 2px solid transparent;
-  border-top-color: var(--accent);
-  animation: spin 0.8s linear infinite;
-  pointer-events: none;
-}
-.cav-ref-fail {
-  position: absolute; top: -5px; left: -5px;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: #ef4444; color: #fff;
-  font-size: 11px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-}
-.cav-ref-remove {
-  position: absolute; top: -6px; right: -6px;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: #ef4444; color: #fff;
-  display: flex; align-items: center; justify-content: center;
-}
-.cav-row { display: flex; align-items: flex-end; gap: 8px; }
-.cav-img-btn {
-  width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%;
-  background: var(--bg-elevated);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--text-secondary);
-}
-.cav-img-btn:active { color: var(--accent); }
-.cav-textarea {
-  flex: 1;
+/* Text input */
+.cav-text-input {
+  width: 100%;
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-input);
   padding: 10px 14px;
   font-size: 15px; color: var(--text);
-  resize: none; max-height: 90px;
-  line-height: 1.4; overflow-y: auto;
+  line-height: 1.4;
   transition: border-color var(--t-fast);
 }
-.cav-textarea:focus { border-color: rgba(167, 139, 250, 0.5); }
-.cav-textarea::placeholder { color: var(--text-secondary); }
-.cav-send-btn {
-  width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%;
-  background: var(--bg-elevated); color: var(--text-secondary);
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s, color 0.15s;
-}
-.cav-send-btn.active { background: var(--accent); color: #fff; }
+.cav-text-input:focus { border-color: rgba(167, 139, 250, 0.5); }
+.cav-text-input::placeholder { color: var(--text-secondary); }
 
-/* Continue bar */
-.cav-continue-bar {
-  display: flex; align-items: center; gap: 10px;
+/* 确定 / Continue 两按键 */
+.cav-action-row {
+  display: flex; gap: 10px;
 }
+.cav-confirm-btn,
 .cav-continue-btn {
   flex: 1;
-  padding: 14px;
+  padding: 12px;
   border-radius: 50px;
+  font-size: 15px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.12s, opacity 0.15s, background 0.15s;
+}
+.cav-confirm-btn {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+.cav-confirm-btn.active {
   background: var(--accent);
   color: #fff;
-  font-size: 16px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  box-shadow: 0 4px 20px rgba(139,92,246,0.35);
-  transition: transform 0.12s;
+  box-shadow: 0 4px 16px rgba(139,92,246,0.35);
 }
-.cav-continue-btn:active:not(:disabled) { transform: scale(0.96); }
-.cav-continue-btn.loading { opacity: 0.7; }
-.cav-btn-spinner {
-  width: 16px; height: 16px; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
-  animation: spin 0.7s linear infinite;
-}
-.cav-edit-btn {
-  width: 46px; height: 46px; flex-shrink: 0; border-radius: 14px;
+.cav-continue-btn {
   background: var(--bg-elevated);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--text-secondary);
-  transition: color 0.15s, background 0.15s;
+  color: var(--accent);
+  border: 1px solid var(--accent);
 }
-.cav-edit-btn:active { color: var(--accent); background: var(--accent-dim); }
+.cav-confirm-btn:active:not(:disabled),
+.cav-continue-btn:active:not(:disabled) { transform: scale(0.96); }
+.cav-confirm-btn:disabled,
+.cav-continue-btn:disabled { opacity: 0.4; }
 
 /* ── Suggestions ── */
 .cav-suggestions {
