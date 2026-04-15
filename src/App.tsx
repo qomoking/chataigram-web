@@ -8,11 +8,13 @@ import {
   Routes,
   useNavigate,
 } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   useCurrentUser,
   useNotificationSocket,
   type Notification,
 } from '@chataigram/core'
+import { prefetchFakeLottieOnIdle } from './fakePresence/useFakePresence'
 
 import FeedPage from './pages/FeedPage/FeedPage'
 import LoginPage from './pages/LoginPage/LoginPage'
@@ -54,6 +56,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 function Shell() {
   const navigate = useNavigate()
   const { data: currentUser } = useCurrentUser()
+  const qc = useQueryClient()
   const notifRef = useRef<NotificationManagerHandle>(null)
 
   const handleNotification = useCallback((n: Notification) => {
@@ -61,6 +64,11 @@ function Shell() {
   }, [])
 
   useNotificationSocket(currentUser?.id ?? null, handleNotification)
+
+  // 登录后用浏览器空闲时间预下载 plaza 假人 Lottie。chunk 独立、走 idle，不抢首屏。
+  useEffect(() => {
+    void prefetchFakeLottieOnIdle(qc)
+  }, [qc])
 
   // 未登录兜底（ProtectedRoute 已处理，这里是双保险）
   useEffect(() => {

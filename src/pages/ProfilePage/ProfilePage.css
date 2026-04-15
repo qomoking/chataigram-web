@@ -63,31 +63,36 @@
   gap: 12px;
 }
 
+/* Hero 头像改成 9:16 海报卡（对齐新生成的 720x1280 全身像）*/
 .avatar-wrap {
   position: relative;
-  width: 88px;
-  height: 88px;
+  width: 108px;
+  aspect-ratio: 9 / 16;
+  border-radius: 18px;
 }
 
 .avatar-img {
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
   object-fit: cover;
-  border: 2px solid var(--border);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  display: block;
 }
 
 .avatar-fallback {
-  width: 88px;
-  height: 88px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  background: linear-gradient(145deg, var(--accent), #a78bfa);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 34px;
+  font-size: 52px;
   font-weight: 700;
   color: #fff;
+  box-shadow: 0 10px 28px rgba(139, 92, 246, 0.28);
 }
 
 /* ── Celebrate animation ── */
@@ -98,7 +103,7 @@
 
 @keyframes avatar-pop {
   0%   { transform: scale(1); }
-  50%  { transform: scale(1.12); }
+  50%  { transform: scale(1.08); }
   100% { transform: scale(1); }
 }
 
@@ -106,7 +111,7 @@
   content: '';
   position: absolute;
   inset: -6px;
-  border-radius: 50%;
+  border-radius: 22px;
   border: 2.5px solid var(--accent);
   animation: ring-expand 2s ease-out forwards;
   pointer-events: none;
@@ -114,14 +119,14 @@
 
 @keyframes ring-expand {
   0%   { opacity: 1;   transform: scale(1); }
-  60%  { opacity: 0.6; transform: scale(1.18); }
-  100% { opacity: 0;   transform: scale(1.35); }
+  60%  { opacity: 0.6; transform: scale(1.12); }
+  100% { opacity: 0;   transform: scale(1.22); }
 }
 
+/* Sparkles 适配矩形周边：上下边各两点、左右边各一点 */
 .avatar-sparkles {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
   pointer-events: none;
   z-index: 2;
 }
@@ -134,12 +139,13 @@
   animation: sparkle-fly 1s ease-out forwards;
 }
 
-.avatar-sparkles span:nth-child(1) { top: 0;   left: 50%; animation-delay: 0s;    --dx: 0px;   --dy: -28px; }
-.avatar-sparkles span:nth-child(2) { top: 15%; left: 90%; animation-delay: 0.08s; --dx: 24px;  --dy: -16px; }
-.avatar-sparkles span:nth-child(3) { top: 70%; left: 90%; animation-delay: 0.16s; --dx: 24px;  --dy: 16px;  }
-.avatar-sparkles span:nth-child(4) { top: 100%;left: 50%; animation-delay: 0.08s; --dx: 0px;   --dy: 28px;  }
-.avatar-sparkles span:nth-child(5) { top: 70%; left: 5%;  animation-delay: 0.16s; --dx: -24px; --dy: 16px;  }
-.avatar-sparkles span:nth-child(6) { top: 15%; left: 5%;  animation-delay: 0s;    --dx: -24px; --dy: -16px; }
+/* 上边左 / 上边右 / 右中 / 下边右 / 下边左 / 左中 */
+.avatar-sparkles span:nth-child(1) { top: 0;    left: 30%; animation-delay: 0s;    --dx: -10px; --dy: -24px; }
+.avatar-sparkles span:nth-child(2) { top: 0;    left: 70%; animation-delay: 0.08s; --dx:  10px; --dy: -24px; }
+.avatar-sparkles span:nth-child(3) { top: 40%;  left: 100%;animation-delay: 0.16s; --dx:  22px; --dy:   0px; }
+.avatar-sparkles span:nth-child(4) { top: 100%; left: 70%; animation-delay: 0.08s; --dx:  10px; --dy:  24px; }
+.avatar-sparkles span:nth-child(5) { top: 100%; left: 30%; animation-delay: 0.16s; --dx: -10px; --dy:  24px; }
+.avatar-sparkles span:nth-child(6) { top: 40%;  left: 0;   animation-delay: 0s;    --dx: -22px; --dy:   0px; }
 
 @keyframes sparkle-fly {
   0%   { opacity: 1; transform: translate(0, 0) scale(1); }
@@ -147,12 +153,13 @@
   100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
 }
 
+/* 编辑小铅笔：浮在卡右下角，半透明遮罩 + 圆形徽章 */
 .avatar-edit {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 26px;
-  height: 26px;
+  bottom: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid var(--bg);
@@ -160,6 +167,7 @@
   align-items: center;
   justify-content: center;
   color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 /* ── Name ── */
