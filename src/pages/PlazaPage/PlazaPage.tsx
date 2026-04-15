@@ -1,6 +1,7 @@
 import {
   Component,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -17,9 +18,11 @@ import {
   usePlazaSocket,
   type PlazaBumpTarget,
   type PlazaUser,
+  type PlazaViewerContext,
 } from '@chataigram/core'
 import CdnImg from '../../components/CdnImg'
 import TabBar from '../../components/TabBar'
+import { useLottieSlots } from '../../hooks/useLottieSlots'
 import './PlazaPage.css'
 
 const TAP_THRESHOLD = 8
@@ -58,6 +61,10 @@ export default function PlazaPage() {
   const [animations, setAnimations] = useState<Record<number, object>>({})
   const animationsRef = useRef(animations)
   animationsRef.current = animations
+  // 关系快照：init 时一次性下发，用于 useLottieSlots 分层选人
+  const [viewerContext, setViewerContext] = useState<PlazaViewerContext | null>(null)
+  // user_id → 加入 plaza 的时戳；init 时给在场用户一个基线，user_join 时取 now
+  const [joinedAt, setJoinedAt] = useState<Record<number, number>>({})
 
   const panRef = useRef({ x: 0, y: 0 })
   const worldRef = useRef<HTMLDivElement>(null)
@@ -98,29 +105,28 @@ export default function PlazaPage() {
   const onInit = useCallback(
     (msg: Parameters<NonNullable<Parameters<typeof usePlazaSocket>[1]['onInit']>>[0]) => {
       setUsers(msg.users)
+      setViewerContext(msg.viewerContext)
+      const now = Date.now()
+      // init 里的用户都视为"已在场"，并列相同基线时戳
+      const baseline: Record<number, number> = {}
+      for (const u of msg.users) baseline[u.id] = now
+      setJoinedAt(baseline)
       if (msg.myPos) {
         setMyPos(msg.myPos)
         setTimeout(() => centerOn(msg.myPos!.x, msg.myPos!.y), 50)
       }
-      // 预取所有已在广场的用户的 Lottie
-      for (const u of msg.users) {
-        if (u.animationTaskId) void fetchAnimation(u.id, u.animationTaskId)
-      }
     },
-    [centerOn, fetchAnimation],
+    [centerOn],
   )
 
-  const onUserJoin = useCallback(
-    (user: PlazaUser) => {
-      setUsers((prev) => {
-        const existing = prev.find((u) => u.id === user.id)
-        if (existing) return prev.map((u) => (u.id === user.id ? user : u))
-        return [...prev, user]
-      })
-      if (user.animationTaskId) void fetchAnimation(user.id, user.animationTaskId)
-    },
-    [fetchAnimation],
-  )
+  const onUserJoin = useCallback((user: PlazaUser) => {
+    setUsers((prev) => {
+      const existing = prev.find((u) => u.id === user.id)
+      if (existing) return prev.map((u) => (u.id === user.id ? user : u))
+      return [...prev, user]
+    })
+    setJoinedAt((prev) => ({ ...prev, [user.id]: Date.now() }))
+  }, [])
 
   const onAnimationReady = useCallback(
     (userId: number, taskId: string) => {
@@ -175,6 +181,26 @@ export default function PlazaPage() {
     onStatusUpdate,
     onAnimationReady,
   })
+
+  // ── Lottie 硬上限选人 ──────────────────────────────────────────
+  // 自己永远 Lottie，单独处理；其他在线用户里最多 7 个拿到 Lottie 名额
+  const lottieIds = useLottieSlots({
+    users,
+    viewerContext,
+    currentUserId: myId,
+    joinedAt,
+  })
+
+  // 只对 lottie 名单内用户（+自己）预取动画。非名单用户用 CdnImg 展示，
+  // 省移动端内存 / 带宽。进/出名单时 effect 会自然补齐缺失的预取。
+  useEffect(() => {
+    for (const u of users) {
+      const needLottie = u.id === myId || lottieIds.has(u.id)
+      if (needLottie && u.animationTaskId) {
+        void fetchAnimation(u.id, u.animationTaskId)
+      }
+    }
+  }, [users, lottieIds, myId, fetchAnimation])
 
   // ── Pan handling ──────────────────────────────────────────────
   const getEventPos = (e: React.TouchEvent | React.MouseEvent) => {
@@ -342,19 +368,23 @@ export default function PlazaPage() {
         }}
       >
         <div className="plaza-world" ref={worldRef}>
-          {users.map((u) => (
+          {users.map((u) => {
+            const isSelf = u.id === myId
+            const lottieEligible = isSelf || lottieIds.has(u.id)
+            const showLottie = lottieEligible && !!animations[u.id]
+            return (
             <div
               key={u.id}
-              className={`avatar-marker${u.id === myId ? ' is-me' : ''}${
+              className={`avatar-marker${isSelf ? ' is-me' : ''}${
                 bumpedUid === u.id ? ' bumped' : ''
               }`}
               style={{ left: u.posX, top: u.posY } as CSSProperties}
             >
               <div className="avatar-card">
                 <div
-                  className={`avatar-img-wrap${animations[u.id] ? '' : ' floating'}`}
+                  className={`avatar-img-wrap${showLottie ? '' : ' floating'}`}
                 >
-                  {animations[u.id] ? (
+                  {showLottie ? (
                     <LottieBoundary
                       fallback={
                         u.avatarUrl ? (
@@ -387,7 +417,8 @@ export default function PlazaPage() {
                 ) : null}
               </div>
             </div>
-          ))}
+            )
+          })}
 
           {bumpEffects.map((e) => (
             <div
