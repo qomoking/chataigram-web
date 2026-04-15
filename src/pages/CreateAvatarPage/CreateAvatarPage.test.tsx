@@ -27,7 +27,7 @@ describe('<CreateAvatarPage> L3', () => {
     localStorage.clear()
   })
 
-  it('renders 6 style chips + send button', () => {
+  it('renders 6 style chips + 确定/Continue 按键', () => {
     renderAt()
     expect(screen.getByText('3D')).toBeTruthy()
     expect(screen.getByText('动漫')).toBeTruthy()
@@ -35,28 +35,45 @@ describe('<CreateAvatarPage> L3', () => {
     expect(screen.getByText('油画')).toBeTruthy()
     expect(screen.getByText('水彩')).toBeTruthy()
     expect(screen.getByText('像素')).toBeTruthy()
-    expect(screen.getByLabelText('send')).toBeTruthy()
+    expect(screen.getByText('确定')).toBeTruthy()
+    expect(screen.getByText('Continue')).toBeTruthy()
   })
 
-  it('select chip + send generates + suggestions appear, then use as avatar → /profile', async () => {
+  it('Continue 在没生成过结果时禁用', () => {
+    renderAt()
+    expect(screen.getByText('Continue').hasAttribute('disabled')).toBe(true)
+  })
+
+  it('选 chip + 确定 → SSE 出图 → 气泡里选用这张 → /profile', async () => {
     renderAt()
     await new Promise((r) => setTimeout(r, 30))
 
     fireEvent.click(screen.getByText('3D'))
-    fireEvent.click(screen.getByLabelText('send'))
+    fireEvent.click(screen.getByText('确定'))
 
-    // 生成完成后显示建议 chips
-    await waitFor(
-      () => {
-        // MSW /api/suggestion 返回 '太空版' '水彩风'
-        expect(screen.getByText('太空版')).toBeTruthy()
-      },
-      { timeout: 5000 },
-    )
+    // 等 SSE 跑完，结果气泡出现"用这张"按键
+    const useBtn = await screen.findByRole('button', { name: /用这张/ }, { timeout: 5000 })
+    expect(screen.getByRole('button', { name: '再改改' })).toBeTruthy()
 
-    // 点"用作头像" → navigate /profile
-    await waitFor(() => expect(screen.getByText(/用作头像/)).toBeTruthy())
-    fireEvent.click(screen.getByText(/用作头像/))
-    await waitFor(() => expect(screen.getByTestId('profile')).toBeTruthy())
+    fireEvent.click(useBtn)
+    await waitFor(() => expect(screen.getByTestId('profile')).toBeTruthy(), {
+      timeout: 3000,
+    })
+  }, 10_000)
+
+  it('再改改 → 隐藏该气泡的选择，但保留图，Continue 仍可用', async () => {
+    renderAt()
+    await new Promise((r) => setTimeout(r, 30))
+
+    fireEvent.click(screen.getByText('动漫'))
+    fireEvent.click(screen.getByText('确定'))
+    await waitFor(() => expect(screen.getByText('再改改')).toBeTruthy(), {
+      timeout: 5000,
+    })
+
+    fireEvent.click(screen.getByText('再改改'))
+    expect(screen.queryByText('再改改')).toBeNull()
+    expect(screen.queryByText(/用这张/)).toBeNull()
+    expect(screen.getByText('Continue').hasAttribute('disabled')).toBe(false)
   })
 })
