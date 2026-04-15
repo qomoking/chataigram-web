@@ -52,6 +52,12 @@ export const plazaWsHandler = plaza.addEventListener('connection', ({ client }) 
           pos_y: 320,
         },
       ],
+      viewer_context: {
+        invited_by_user_ids: [],
+        invitee_user_ids: [],
+        interacted_user_ids: [9001],
+        interaction_times: { '9001': '2026-04-13T10:00:00Z' },
+      },
     }),
   )
 
