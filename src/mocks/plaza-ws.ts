@@ -51,6 +51,18 @@ export const plazaWsHandler = plaza.addEventListener('connection', ({ client }) 
           pos_x: 120,
           pos_y: 320,
         },
+        // 15 个带 animation_task_id 和头像的 bot，用于覆盖 Lottie 配额场景
+        // （L4 e2e 依赖此规模）。位置散开铺满 plaza。
+        ...Array.from({ length: 15 }, (_, i) => ({
+          id: 9100 + i,
+          name: `Bot${i}`,
+          avatar: `https://picsum.photos/seed/bot${i}/100`,
+          status_text: null,
+          status_emoji: null,
+          animation_task_id: `mock-anim-bot-${i}`,
+          pos_x: 200 + (i % 5) * 120,
+          pos_y: 500 + Math.floor(i / 5) * 120,
+        })),
       ],
       viewer_context: {
         invited_by_user_ids: [],
