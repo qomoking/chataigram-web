@@ -4,11 +4,10 @@ import type { Post } from '@chataigram/core'
 import { useSavedPosts } from '../../hooks/useSavedPosts'
 import { HeartIcon, BookmarkIcon } from '../../components/icons'
 import CdnImg from '../../components/CdnImg'
-import TabBar from '../../components/TabBar'
 import styles from './FeedPage.module.css'
 
 /**
- * Feed 页 —— 公开 feed 流，masonry 布局 + 点赞 + 收藏 + Lightbox + TabBar。
+ * Feed 页 —— 公开 feed 流，masonry 布局 + 点赞 + 收藏 + Lightbox。
  */
 export default function FeedPage() {
   const { data, isLoading, error } = useFeed({ limit: 20 })
@@ -94,8 +93,6 @@ export default function FeedPage() {
           onClose={() => setLightbox(null)}
         />
       )}
-
-      <TabBar />
     </main>
   )
 }

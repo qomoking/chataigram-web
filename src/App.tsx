@@ -30,10 +30,12 @@ import CreatePage from './pages/CreatePage/CreatePage'
 import CreateAvatarPage from './pages/CreateAvatarPage/CreateAvatarPage'
 import PlazaPage from './pages/PlazaPage/PlazaPage'
 import ImmersiveFeedPage from './pages/ImmersiveFeedPage/ImmersiveFeedPage'
+import FakePresenceDebug from './pages/FakePresenceDebug/FakePresenceDebug'
 
 import NotificationManager, {
   type NotificationManagerHandle,
 } from './components/NotificationManager'
+import TabBar from './components/TabBar'
 import { prefetchCdnConfig } from '@chataigram/core'
 
 // 启动即预热 CDN 配置
@@ -93,9 +95,11 @@ function Shell() {
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/invites" element={<InvitePage />} />
           <Route path="/plaza" element={<PlazaPage />} />
+          <Route path="/dev/fake-presence" element={<FakePresenceDebug />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      <TabBar />
       <NotificationManager ref={notifRef} />
     </div>
   )

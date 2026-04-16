@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useCurrentUser, useLogout, useUnreadCount } from '@chataigram/core'
+import { useCurrentUser, useLogout } from '@chataigram/core'
 import CdnImg from '../../components/CdnImg'
-import TabBar from '../../components/TabBar'
 import { getProfile, saveProfile, type LocalProfile } from '../../utils/profile-storage'
 import { t } from '../../utils/i18n'
 import './ProfilePage.css'
@@ -23,7 +22,6 @@ export default function ProfilePage() {
   const { state } = useLocation() as { state: LocationState }
   const { data: currentUser } = useCurrentUser()
   const logout = useLogout()
-  const { data: unread = 0 } = useUnreadCount()
 
   const [profile, setProfile] = useState<LocalProfile>(() =>
     getInitialProfile(currentUser ?? null),
@@ -143,18 +141,10 @@ export default function ProfilePage() {
         </div>
 
         <div className="profile-entries">
-          <Entry
-            icon="💬"
-            label={t('profile.inbox')}
-            onClick={() => navigate('/inbox')}
-            badge={unread > 0 ? (unread > 99 ? '99+' : String(unread)) : null}
-          />
           <Entry icon="🎨" label={t('profile.works')} onClick={() => navigate('/works')} />
-          <Entry icon="🌐" label={t('profile.plaza')} onClick={() => navigate('/plaza')} />
           <Entry icon="🎟️" label={t('profile.invites')} onClick={() => navigate('/invites')} />
         </div>
       </div>
-      <TabBar />
     </div>
   )
 }
@@ -163,12 +153,10 @@ function Entry({
   icon,
   label,
   onClick,
-  badge,
 }: {
   icon: string
   label: string
   onClick: () => void
-  badge?: string | null
 }) {
   return (
     <button type="button" className="entry-card" onClick={onClick}>
@@ -177,7 +165,6 @@ function Entry({
         <span className="entry-label">{label}</span>
       </div>
       <div className="entry-right">
-        {badge && <span className="entry-badge">{badge}</span>}
         <svg
           width="16"
           height="16"

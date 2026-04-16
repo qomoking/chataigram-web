@@ -38,7 +38,8 @@ export const FAKE_USERS: readonly FakeUserMeta[] = [
     name: 'Vex',
     gender: 'm',
     archetype: 'cyberpunk',
-    avatarUrl: null,
+    avatarUrl:
+      'https://cdn.aiwaves.tech/prod/telegram/avatar/1775706027920393/1776269277003241.webp',
     statusEmoji: '🌃',
     statusText: 'jacked into the grid',
     animationTaskId: 'fake:cyberpunk-m',
@@ -48,7 +49,8 @@ export const FAKE_USERS: readonly FakeUserMeta[] = [
     name: 'Eloise',
     gender: 'f',
     archetype: 'victorian',
-    avatarUrl: null,
+    avatarUrl:
+      'https://cdn.aiwaves.tech/prod/telegram/avatar/1775706027920393/1776269433694896.webp',
     statusEmoji: '🌹',
     statusText: 'tea in the rose garden',
     animationTaskId: 'fake:victorian-f',
@@ -58,7 +60,8 @@ export const FAKE_USERS: readonly FakeUserMeta[] = [
     name: 'Renji',
     gender: 'm',
     archetype: 'samurai',
-    avatarUrl: null,
+    avatarUrl:
+      'https://cdn.aiwaves.tech/prod/telegram/avatar/1775706027920393/1776269591733943.webp',
     statusEmoji: '⚔️',
     statusText: 'sharpening the blade',
     animationTaskId: 'fake:samurai-m',
@@ -68,7 +71,8 @@ export const FAKE_USERS: readonly FakeUserMeta[] = [
     name: 'Sylva',
     gender: 'f',
     archetype: 'elf',
-    avatarUrl: null,
+    avatarUrl:
+      'https://cdn.aiwaves.tech/prod/telegram/avatar/1775706027920393/1776269744531003.webp',
     statusEmoji: '🍃',
     statusText: 'whispering to oaks',
     animationTaskId: 'fake:elf-f',
@@ -78,7 +82,8 @@ export const FAKE_USERS: readonly FakeUserMeta[] = [
     name: 'Hank',
     gender: 'm',
     archetype: 'cowboy',
-    avatarUrl: null,
+    avatarUrl:
+      'https://cdn.aiwaves.tech/prod/telegram/avatar/1775706027920393/1776269906888412.webp',
     statusEmoji: '🤠',
     statusText: 'sun on my back',
     animationTaskId: 'fake:cowboy-m',
@@ -88,7 +93,8 @@ export const FAKE_USERS: readonly FakeUserMeta[] = [
     name: 'Kade',
     gender: 'm',
     archetype: 'astronaut',
-    avatarUrl: null,
+    avatarUrl:
+      'https://cdn.aiwaves.tech/prod/telegram/avatar/1775706027920393/1776270072151892.webp',
     statusEmoji: '🛰️',
     statusText: 'drifting past Earth',
     animationTaskId: 'fake:astronaut-m',
@@ -98,7 +104,8 @@ export const FAKE_USERS: readonly FakeUserMeta[] = [
     name: 'Morrigan',
     gender: 'f',
     archetype: 'witch',
-    avatarUrl: null,
+    avatarUrl:
+      'https://cdn.aiwaves.tech/prod/telegram/avatar/1775706027920393/1776270229729255.webp',
     statusEmoji: '🌙',
     statusText: 'reading the stars',
     animationTaskId: 'fake:witch-f',
@@ -108,7 +115,8 @@ export const FAKE_USERS: readonly FakeUserMeta[] = [
     name: 'Brie',
     gender: 'f',
     archetype: 'baker',
-    avatarUrl: null,
+    avatarUrl:
+      'https://cdn.aiwaves.tech/prod/telegram/avatar/1775706027920393/1776270388809638.webp',
     statusEmoji: '🥐',
     statusText: 'first batch out the oven',
     animationTaskId: 'fake:baker-f',
@@ -118,7 +126,8 @@ export const FAKE_USERS: readonly FakeUserMeta[] = [
     name: 'Tenzin',
     gender: 'm',
     archetype: 'monk',
-    avatarUrl: null,
+    avatarUrl:
+      'https://cdn.aiwaves.tech/prod/telegram/avatar/1775706027920393/1776270767851297.webp',
     statusEmoji: '🪷',
     statusText: 'breathing with the wind',
     animationTaskId: 'fake:monk-m',
@@ -128,7 +137,8 @@ export const FAKE_USERS: readonly FakeUserMeta[] = [
     name: 'Riot',
     gender: 'f',
     archetype: 'punk',
-    avatarUrl: null,
+    avatarUrl:
+      'https://cdn.aiwaves.tech/prod/telegram/avatar/1775706027920393/1776270933931801.webp',
     statusEmoji: '🎸',
     statusText: 'feedback all the way up',
     animationTaskId: 'fake:punk-f',

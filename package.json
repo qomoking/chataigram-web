@@ -25,7 +25,8 @@
     "mocks:init": "msw init public/ --save",
     "core:bump": "node scripts/bump-core.mjs",
     "core:status": "git -C packages/core status && echo --- && git -C packages/core log -1 --oneline",
-    "deploy": "bash scripts/deploy-web.sh"
+    "deploy": "bash scripts/deploy-web.sh",
+    "gen:fake-avatars": "node --env-file=.env.fake-avatars.local scripts/generate-fake-avatars.mjs"
   },
   "dependencies": {
     "@chataigram/core": "workspace:*",

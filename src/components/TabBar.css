@@ -1,0 +1,104 @@
+/* ── Shell-layer TabBar ──────────────────────────────────── */
+
+.tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 68px;
+  padding-bottom: var(--safe-bottom, 0);
+  background: rgba(0, 0, 0, 0.9);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  z-index: 100;
+}
+
+/* ── 普通 tab ── */
+
+.tabbar-item {
+  flex: 1 1 0;
+  background: none;
+  border: none;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition: color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tabbar-item:active .tabbar-icon { transform: scale(0.92); }
+
+.tabbar-item.is-active {
+  color: #fff;
+}
+
+.tabbar-icon {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease;
+}
+
+.tabbar-item.is-active .tabbar-icon {
+  filter: drop-shadow(0 1px 4px rgba(255, 255, 255, 0.25));
+}
+
+.tabbar-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.tabbar-item.is-active .tabbar-label {
+  font-weight: 700;
+}
+
+.tabbar-badge {
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3b30;
+  border: 1.5px solid rgba(0, 0, 0, 0.9);
+}
+
+/* ── 中间拍照按钮 ── */
+
+.tabbar-camera {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  margin: -10px 6px 0;
+  align-self: center;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: linear-gradient(135deg, #ff6b35, #f7c59f);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  padding: 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tabbar-camera:active {
+  transform: scale(0.94);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}

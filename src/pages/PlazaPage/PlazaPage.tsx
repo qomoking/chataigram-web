@@ -21,7 +21,6 @@ import {
   type PlazaViewerContext,
 } from '@chataigram/core'
 import CdnImg from '../../components/CdnImg'
-import TabBar from '../../components/TabBar'
 import { useLottieSlots } from '../../hooks/useLottieSlots'
 import { isFakeUserId } from '../../fakePresence/fakeUsers'
 import { useFakePresence } from '../../fakePresence/useFakePresence'
@@ -416,42 +415,38 @@ export default function PlazaPage() {
               }`}
               style={{ left: u.posX, top: u.posY } as CSSProperties}
             >
-              <div className="avatar-card">
-                <div
-                  className={`avatar-img-wrap${showLottie ? '' : ' floating'}`}
-                >
-                  {showLottie ? (
-                    <LottieBoundary
-                      fallback={
-                        u.avatarUrl ? (
-                          <CdnImg src={u.avatarUrl} alt={u.name} className="avatar-img" />
-                        ) : (
-                          <div className="avatar-fallback">{(u.name || '?')[0]}</div>
-                        )
-                      }
-                    >
-                      <Lottie
-                        animationData={animations[u.id]}
-                        loop
-                        autoplay
-                        style={{ width: 60, height: 107, borderRadius: 12 }}
-                      />
-                    </LottieBoundary>
-                  ) : u.avatarUrl ? (
-                    <CdnImg src={u.avatarUrl} alt={u.name} className="avatar-img" />
-                  ) : (
-                    <div className="avatar-fallback">{(u.name || '?')[0]}</div>
-                  )}
-                  {u.id === myId && <div className="avatar-me-dot">me</div>}
-                </div>
-                <div className="avatar-name">{u.name}</div>
-                {u.statusText ? (
-                  <div className="avatar-status">
-                    {u.statusEmoji ? `${u.statusEmoji} ` : ''}
-                    {u.statusText}
-                  </div>
-                ) : null}
+              <div className={`avatar-img-wrap${showLottie ? '' : ' floating'}`}>
+                {showLottie ? (
+                  <LottieBoundary
+                    fallback={
+                      u.avatarUrl ? (
+                        <CdnImg src={u.avatarUrl} alt={u.name} className="avatar-img" />
+                      ) : (
+                        <div className="avatar-fallback">{(u.name || '?')[0]}</div>
+                      )
+                    }
+                  >
+                    <Lottie
+                      animationData={animations[u.id]}
+                      loop
+                      autoplay
+                      style={{ width: 60, height: 107, borderRadius: 12 }}
+                    />
+                  </LottieBoundary>
+                ) : u.avatarUrl ? (
+                  <CdnImg src={u.avatarUrl} alt={u.name} className="avatar-img" />
+                ) : (
+                  <div className="avatar-fallback">{(u.name || '?')[0]}</div>
+                )}
+                {u.id === myId && <div className="avatar-me-dot">me</div>}
               </div>
+              <div className="avatar-name">{u.name}</div>
+              {u.statusText ? (
+                <div className="avatar-status">
+                  {u.statusEmoji ? `${u.statusEmoji} ` : ''}
+                  {u.statusText}
+                </div>
+              ) : null}
             </div>
             )
           })}
@@ -577,8 +572,6 @@ export default function PlazaPage() {
           </button>
         </div>
       </div>
-
-      <TabBar />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 /**
  * L3: ProfilePage（Me tab 入口页）。
+ * Plaza / Inbox 已上移到 Shell 层 TabBar，此页只剩 Works + Invites。
  */
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -17,7 +18,7 @@ function renderAt() {
       <Routes>
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/login" element={<div data-testid="login-page">LOGIN</div>} />
-        <Route path="/inbox" element={<div data-testid="inbox">INBOX</div>} />
+        <Route path="/works" element={<div data-testid="works">WORKS</div>} />
       </Routes>
     </MemoryRouter>,
     { wrapper: wrapWithProviders() },
@@ -31,24 +32,20 @@ describe('<ProfilePage> L3', () => {
     localStorage.clear()
   })
 
-  it('renders entries + badge with unread count', async () => {
+  it('renders remaining entries (works + invites)', () => {
     renderAt()
-    // 4 个入口 emoji
-    expect(screen.getByText('💬')).toBeTruthy()
     expect(screen.getByText('🎨')).toBeTruthy()
-    expect(screen.getByText('🌐')).toBeTruthy()
     expect(screen.getByText('🎟️')).toBeTruthy()
-    // unread badge = 2 （mock 返回 count=2）
-    await waitFor(() => expect(screen.getByText('2')).toBeTruthy())
+    // plaza / inbox 已移除
+    expect(screen.queryByText('💬')).toBeNull()
+    expect(screen.queryByText('🌐')).toBeNull()
   })
 
-  it('clicking inbox entry navigates to /inbox', async () => {
+  it('clicking works entry navigates to /works', async () => {
     renderAt()
-    await waitFor(() => expect(screen.getByText('💬')).toBeTruthy())
-    // 找 inbox 入口
-    const inboxEntry = screen.getByText('💬').closest('button')!
-    fireEvent.click(inboxEntry)
-    await waitFor(() => expect(screen.getByTestId('inbox')).toBeTruthy())
+    const entry = screen.getByText('🎨').closest('button')!
+    fireEvent.click(entry)
+    await waitFor(() => expect(screen.getByTestId('works')).toBeTruthy())
   })
 
   it('switch account logs out and navigates to /login', async () => {

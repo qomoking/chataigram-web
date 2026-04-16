@@ -1,123 +1,133 @@
-import { useState, type CSSProperties } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useUnreadCount } from '@chataigram/core'
 import CameraFlow from './CameraFlow'
-import type { Post } from '@chataigram/core'
+import './TabBar.css'
 
-type TabBarProps = {
-  onCamera?: (post: Post) => void
+type TabKey = 'home' | 'plaza' | 'inbox' | 'me'
+
+type TabDef = {
+  key: TabKey
+  path: string
+  label: string
+  icon: ReactNode
 }
 
 /**
- * 底部 3 键 TabBar —— Main / Camera / Me。
- * 和 frontend TabBar.jsx 行为对齐，未读用小红点提示。
+ * Shell 层 5 键 TabBar —— Home / Plaza / Camera / Inbox / Me。
+ * Camera 居中抬高，Inbox 右上角红点提示未读。
  */
-export default function TabBar({ onCamera }: TabBarProps) {
+export default function TabBar() {
   const { data: unreadCount = 0 } = useUnreadCount()
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [showCamera, setShowCamera] = useState(false)
 
-  const isMain = pathname === '/'
-  const isMe = pathname === '/profile'
-
-  const barStyle: CSSProperties = {
-    position: 'fixed',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 68,
-    background: 'rgba(0,0,0,0.9)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    zIndex: 100,
-    borderTop: '1px solid rgba(255,255,255,0.08)',
+  const isActive = (path: string) => {
+    if (path === '/') return pathname === '/' || pathname === '/feed'
+    return pathname === path || pathname.startsWith(`${path}/`)
   }
 
-  const textBtn = (active: boolean): CSSProperties => ({
-    background: 'none',
-    border: 'none',
-    color: active ? '#fff' : 'rgba(255,255,255,0.5)',
-    fontSize: 15,
-    fontWeight: active ? 700 : 400,
-    cursor: 'pointer',
-    padding: '8px 24px',
-    position: 'relative',
-  })
+  const tabs: TabDef[] = [
+    { key: 'home', path: '/', label: 'Home', icon: <HomeIcon /> },
+    { key: 'plaza', path: '/plaza', label: 'Plaza', icon: <PlazaIcon /> },
+    { key: 'inbox', path: '/inbox', label: 'Inbox', icon: <InboxIcon /> },
+    { key: 'me', path: '/profile', label: 'Me', icon: <MeIcon /> },
+  ]
 
-  const cameraBtn: CSSProperties = {
-    width: 52,
-    height: 52,
-    borderRadius: '50%',
-    border: '3px solid #fff',
-    background: 'linear-gradient(135deg, #ff6b35, #f7c59f)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
-    flexShrink: 0,
-    padding: 0,
-  }
-
-  const dot: CSSProperties = {
-    position: 'absolute',
-    top: 4,
-    right: 12,
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    background: '#ff3b30',
-    border: '1.5px solid rgba(0,0,0,0.9)',
+  const renderTab = (tab: TabDef, showBadge = false) => {
+    const active = isActive(tab.path)
+    return (
+      <button
+        key={tab.key}
+        type="button"
+        className={`tabbar-item${active ? ' is-active' : ''}`}
+        onClick={() => navigate(tab.path)}
+        aria-label={tab.label}
+      >
+        <span className="tabbar-icon">
+          {tab.icon}
+          {showBadge && <span className="tabbar-badge" aria-hidden="true" />}
+        </span>
+        <span className="tabbar-label">{tab.label}</span>
+      </button>
+    )
   }
 
   return (
     <>
-      <div style={barStyle}>
-        <button type="button" style={textBtn(isMain)} onClick={() => navigate('/')}>
-          Main
-        </button>
-
+      <nav className="tabbar" aria-label="primary">
+        {renderTab(tabs[0]!)}
+        {renderTab(tabs[1]!)}
         <button
           type="button"
-          style={cameraBtn}
+          className="tabbar-camera"
           onClick={() => setShowCamera(true)}
           aria-label="open camera"
         >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ pointerEvents: 'none' }}
-          >
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-            <circle cx="12" cy="13" r="4" />
-          </svg>
+          <CameraIcon />
         </button>
+        {renderTab(tabs[2]!, unreadCount > 0)}
+        {renderTab(tabs[3]!)}
+      </nav>
 
-        <button type="button" style={textBtn(isMe)} onClick={() => navigate('/profile')}>
-          Me
-          {unreadCount > 0 && <span style={dot} />}
-        </button>
-      </div>
-
-      {showCamera && (
-        <CameraFlow
-          onPost={(post) => {
-            onCamera?.(post)
-            setShowCamera(false)
-          }}
-          onClose={() => setShowCamera(false)}
-        />
-      )}
+      {showCamera && <CameraFlow onClose={() => setShowCamera(false)} />}
     </>
+  )
+}
+
+// ── Icons ────────────────────────────────────────────────
+// 统一 24×24 viewBox, stroke-based, 2px 线宽, round 收尾。
+
+function HomeIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 11.5 12 4l9 7.5" />
+      <path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" />
+    </svg>
+  )
+}
+
+function PlazaIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18" />
+      <path d="M12 3a14 14 0 0 0 0 18" />
+    </svg>
+  )
+}
+
+function CameraIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 8h3l1.5-2.2A1 1 0 0 1 9.3 5.4h5.4a1 1 0 0 1 .8.4L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  )
+}
+
+function InboxIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-6l-3 3-3-3H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+      <path d="M8 10h8" />
+      <path d="M8 13h5" />
+    </svg>
+  )
+}
+
+function MeIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="3.8" />
+      <path d="M4.5 20c1-3.8 4-6 7.5-6s6.5 2.2 7.5 6" />
+    </svg>
   )
 }
