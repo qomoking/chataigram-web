@@ -1,8 +1,8 @@
 /**
  * @chataigram/core 的类型定义副本。
  *
- * 来源：core 仓 docs/core-api.md（自动生成）。
- * 设计师用这些类型写 mock 和页面，保证形状与 core 一致。
+ * 与 SDK 契约保持一致（参考 docs/core-api.md）。
+ * 用这些类型写 mock 和页面，保证形状与 SDK 对齐。
  */
 
 // ── Feed / Post ─────────────────────────────────────────────

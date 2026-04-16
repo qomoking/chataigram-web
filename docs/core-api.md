@@ -1,6 +1,8 @@
 # @chataigram/core — API Reference
 
-> 自动生成自 `src/index.ts` 的公开导出。设计师和 AI 读这份文档判断 core 有没有对应 hook。
+> 业务 SDK 的完整公开契约。**不要手改** —— 改动由 SDK 维护方驱动。
+>
+> 在本仓里判断"SDK 有没有对应 hook"时先读这份；没有就走许愿单（`docs/core-wishlist.md`）。
 >
 > 稳定性标注：`@stable` = 不会在兼容窗口内破坏；`@experimental` = 可能在任何版本变更。
 

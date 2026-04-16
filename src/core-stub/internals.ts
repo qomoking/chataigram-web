@@ -1,6 +1,6 @@
 /**
  * @chataigram/core/internals stub — 逃生舱。
- * 设计师模式下通过 MSW 拦截。
+ * 本地开发通过 MSW 拦截。
  */
 
 async function stubFetch<T>(method: string, path: string, body?: unknown): Promise<T> {

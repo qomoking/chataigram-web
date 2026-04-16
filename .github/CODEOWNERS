@@ -1,27 +1,27 @@
 # ============================================================
-#  chataigram-web 是设计师的主场（独立仓，不再挂 core submodule）。
-#  默认设计师 + 工程师共同 own，但基础设施只允许工程师改。
+#  chataigram-web 是纯 UI 仓。
+#  默认大家共同 own，但基础设施和 SDK 契约只允许 @qomoking 改。
 # ============================================================
 
-# 默认：UI 代码 designers + engineers 都能 review（任一 approve 即可）
+# 默认：UI 代码大家都能 review（任一 approve 即可）
 *                       @yinxinghuan @qomoking
 
-# 视觉 / 交互为主：设计师优先 review
+# 视觉 / 交互为主
 /src/pages/             @yinxinghuan @qomoking
 /src/components/        @yinxinghuan @qomoking
 /src/layouts/           @yinxinghuan @qomoking
 /src/styles/            @yinxinghuan @qomoking
 /public/                @yinxinghuan @qomoking
 
-# 数据契约 / mock：工程师 review（影响和后端 / core 对齐）
+# 数据契约 / mock：影响和 SDK 对齐
 /src/mocks/             @qomoking
 /src/hooks/             @qomoking
 /docs/core-wishlist.md  @qomoking
 
-# core-stub：@chataigram/core 的本地替身，设计师不应手改
+# SDK 本地 stub：不应手改
 /src/core-stub/         @qomoking
 
-# 基础设施：必须工程师 review
+# 基础设施
 /.github/               @qomoking
 /scripts/               @qomoking
 /package.json           @qomoking
@@ -31,5 +31,5 @@
 /tsconfig*.json         @qomoking
 /eslint.config.js       @qomoking
 
-# 自动同步的契约文档：不允许人工编辑（从 core 仓同步）
+# SDK 契约文档：不允许人工编辑
 /docs/core-api.md       @qomoking
