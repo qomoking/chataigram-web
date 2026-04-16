@@ -126,7 +126,7 @@ function authHeaders() {
 
 /**
  * 调 SSE generate_stream。返回 { resultUrl, prompt }。
- * 协议参考 packages/core/src/hooks/useAvatarGenerate.ts。
+ * 协议参考 docs/core-api.md 的 useAvatarGenerate。
  */
 async function generateAvatar(promptText) {
   const res = await fetch(`${API_BASE}/avatar/generate_stream`, {

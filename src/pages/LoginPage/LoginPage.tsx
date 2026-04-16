@@ -22,7 +22,7 @@ import './LoginPage.css'
  *   3. register sheet：注册，带用户名可用性检查
  * 加 Google OAuth 按钮。
  *
- * 未迁移（按 AGENTS.md 场景 1 处理）：
+ * 未迁移（按 docs/core-wishlist.md 登记新需求处理）：
  *   • prefetchAnimation（动画缓存预取）—— 后续补
  *   • 预设用户的后端实时信息（useUserInfo 批量调用）—— MVP 用静态数据
  *   • i18n —— 暂硬编码中文

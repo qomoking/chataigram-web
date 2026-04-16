@@ -9,7 +9,6 @@
 
 ## 影响范围
 
-- [ ] 只改了 web 仓代码（未改 `packages/core/`）
 - [ ] 只做了一件事，没夹带无关 refactor / 清理
 - [ ] 基于最新 `main` 分支
 
@@ -26,8 +25,8 @@
 
 ## 数据与契约
 
-- [ ] 需要的数据已在 `@chataigram/core` 找到对应 hook
-- [ ] 若 core 没有：加了 `src/mocks/handlers.ts` mock 且类型 import from `@chataigram/core`
+- [ ] 需要的数据已在 `docs/core-api.md` 找到对应 hook
+- [ ] 若 core 没有：加了 `src/mocks/handlers.ts` mock 且类型 import from `@chataigram/core`（走 core-stub）
 - [ ] 若 core 需要新增：已在 `docs/core-wishlist.md` 登记
 
 ## 本地验证

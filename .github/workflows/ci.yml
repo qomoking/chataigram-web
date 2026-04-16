@@ -16,10 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          # PR 改动 submodule SHA 时，要拿到那个 SHA 的内容
-          fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
 
@@ -29,7 +25,6 @@ jobs:
           cache: pnpm
 
       - name: Install
-        # workspace 通过 packages/core 软链接，无需任何 token
         run: pnpm install --frozen-lockfile
 
       - run: pnpm lint
