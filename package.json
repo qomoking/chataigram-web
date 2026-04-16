@@ -9,8 +9,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "postinstall": "node scripts/init-submodule.mjs",
-    "dev": "vite",
+    "dev": "VITE_USE_MOCKS=true vite",
     "dev:mocks": "VITE_USE_MOCKS=true vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
@@ -23,13 +22,10 @@
     "e2e:ui": "playwright test --ui",
     "e2e:install": "playwright install --with-deps chromium",
     "mocks:init": "msw init public/ --save",
-    "core:bump": "node scripts/bump-core.mjs",
-    "core:status": "git -C packages/core status && echo --- && git -C packages/core log -1 --oneline",
     "deploy": "bash scripts/deploy-web.sh",
     "gen:fake-avatars": "node --env-file=.env.fake-avatars.local scripts/generate-fake-avatars.mjs"
   },
   "dependencies": {
-    "@chataigram/core": "workspace:*",
     "@tanstack/react-query": "^5.59.0",
     "lottie-react": "^2.4.1",
     "react": "^18.3.1",

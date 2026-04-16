@@ -72,7 +72,7 @@ export default tseslint.config(
     //   - cdn.ts 拉 /api/cdn-config（基建 metadata）
     //   - animationCache.ts 预取 Lottie JSON（静态资源）
     // 业务域数据仍然只能通过 @chataigram/core 的 hooks。
-    files: ['src/utils/cdn.ts', 'src/utils/animationCache.ts'],
+    files: ['src/utils/cdn.ts', 'src/utils/animationCache.ts', 'src/core-stub/**/*.ts'],
     rules: {
       'no-restricted-globals': 'off',
     },

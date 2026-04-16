@@ -24,6 +24,11 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
 
+    "paths": {
+      "@chataigram/core": ["./src/core-stub/index.ts"],
+      "@chataigram/core/internals": ["./src/core-stub/internals.ts"]
+    },
+
     "types": ["vite/client", "vitest/globals"]
   },
   "include": ["src"]

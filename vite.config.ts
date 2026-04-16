@@ -1,10 +1,17 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { resolve } from 'node:path'
 
 const useMocks = process.env['VITE_USE_MOCKS'] === 'true'
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@chataigram/core/internals': resolve(__dirname, 'src/core-stub/internals.ts'),
+      '@chataigram/core': resolve(__dirname, 'src/core-stub/index.ts'),
+    },
+  },
   server: {
     port: 5173,
     // When MSW mocks are active (dev:mocks / E2E), don't proxy to the real
