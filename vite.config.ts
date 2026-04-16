@@ -4,12 +4,32 @@ import { resolve } from 'node:path'
 
 const useMocks = process.env['VITE_USE_MOCKS'] === 'true'
 
+/**
+ * Core 源码路径解析：
+ *   - 默认（设计师模式）：指向 src/core-stub/ —— hook 走 fetch + MSW
+ *   - 设 VITE_CORE_PATH：指向真实 core 源码 —— app 组装项目生产构建用
+ *
+ * VITE_CORE_PATH 应指向 core 包的根目录（含 src/index.ts 和 src/internals.ts）
+ * 例：在 app 仓构建时设 VITE_CORE_PATH=../core
+ */
+const coreRoot = process.env['VITE_CORE_PATH']
+  ? resolve(__dirname, process.env['VITE_CORE_PATH'])
+  : resolve(__dirname, 'src/core-stub')
+
+const coreIndex = process.env['VITE_CORE_PATH']
+  ? `${coreRoot}/src/index.ts`
+  : `${coreRoot}/index.ts`
+
+const coreInternals = process.env['VITE_CORE_PATH']
+  ? `${coreRoot}/src/internals.ts`
+  : `${coreRoot}/internals.ts`
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@chataigram/core/internals': resolve(__dirname, 'src/core-stub/internals.ts'),
-      '@chataigram/core': resolve(__dirname, 'src/core-stub/index.ts'),
+      '@chataigram/core/internals': coreInternals,
+      '@chataigram/core': coreIndex,
     },
   },
   server: {

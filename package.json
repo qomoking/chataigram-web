@@ -12,6 +12,7 @@
     "dev": "VITE_USE_MOCKS=true vite",
     "dev:mocks": "VITE_USE_MOCKS=true vite",
     "build": "tsc -b && vite build",
+    "build:bundle": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "lint": "eslint .",
@@ -22,7 +23,6 @@
     "e2e:ui": "playwright test --ui",
     "e2e:install": "playwright install --with-deps chromium",
     "mocks:init": "msw init public/ --save",
-    "deploy": "bash scripts/deploy-web.sh",
     "gen:fake-avatars": "node --env-file=.env.fake-avatars.local scripts/generate-fake-avatars.mjs"
   },
   "dependencies": {
