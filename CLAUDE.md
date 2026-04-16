@@ -2,9 +2,7 @@
 
 You are in **chataigram-web** — the frontend app. **设计师主场**。
 
-**先读 `AGENTS.md`（跨仓协议）**。本文件只写本仓专属规则。
-
-`@chataigram/core`（业务 SDK）以 git submodule 挂在 `packages/core/`。你**不能改它**，但可以读 `packages/core/src/index.ts` 查契约。
+本仓**不包含** `@chataigram/core` 源码。core 的 API 文档在 `docs/core-api.md`，类型 stub 在 `src/core-stub/`。
 
 ---
 
@@ -14,6 +12,7 @@ You are in **chataigram-web** — the frontend app. **设计师主场**。
 src/
   pages/         路由页面
   components/    可复用组件（视觉 + 交互）
+  core-stub/     @chataigram/core 的类型 + stub 实现（设计师模式）
   layouts/       布局（可选）
   hooks/         纯 UI hook（useMediaQuery / useHover 等）
   mocks/         MSW 假数据（给本地 dev）
@@ -23,17 +22,16 @@ src/
 
 public/          静态资源
 docs/
+  core-api.md        core 的完整 API 文档（自动生成，从 core 仓同步）
   core-wishlist.md   让 core 加东西用
 ```
 
 ## 绝对禁止
 
-- `fetch(` / `axios.*` / `ky(` / `new WebSocket(` / `new XMLHttpRequest(`
-  → 全部用 `@chataigram/core` 的 hooks 替代
-- 修改 `packages/core/` 的任何文件（CODEOWNERS 拦 PR）
-- 读写 `node_modules/@chataigram/core/`（symlink，别碰）
-- 引入自己的 HTTP 客户端（那是 core 的活）
+- 在页面 / 组件里直接写 `fetch(` / `axios.*` / `ky(` / `new WebSocket(`
+  → 全部用 `@chataigram/core` 的 hooks（映射到 `src/core-stub/`）
 - 在 `src/` 下硬编码 API 地址 / 后端域名
+- 引入新的 HTTP 客户端
 
 ESLint 会拦住大部分。**不要绕过**，有需求就走 wishlist。
 
@@ -41,7 +39,7 @@ ESLint 会拦住大部分。**不要绕过**，有需求就走 wishlist。
 
 ## 拿数据的标准动作
 
-第一步：读 `packages/core/src/index.ts`，看 core 有没有对应 hook。
+第一步：读 `docs/core-api.md`，看 core 有没有对应 hook。
 
 **有**：
 
@@ -52,23 +50,34 @@ export function FeedPage() {
   const { data, isLoading, error } = useFeed()
   if (isLoading) return <Spinner />
   if (error) return <ErrorState error={error} />
-  return <FeedList items={data?.items ?? []} />
+  return <FeedList items={data?.posts ?? []} />
 }
 ```
+
+`@chataigram/core` 通过 tsconfig paths + vite alias 映射到 `src/core-stub/index.ts`。
+stub 里的 hook 通过 fetch 发请求 → MSW 拦截返回 mock 数据。
 
 **没有**：
 
 1. 在 `src/mocks/handlers.ts` 加 MSW handler
 2. 在 `docs/core-wishlist.md` 追加条目（模板见那个文件）
-3. 继续写页面，用 mock 的数据形状
+3. 在 `src/core-stub/index.ts` 加对应的 stub hook
+4. 继续写页面，用 mock 的数据形状
 
-**实在要紧，非 mock 不可**（极少数）：
-```ts
-import { apiClient } from '@chataigram/core/internals'
-// TODO(core): extract to useXxx
-const data = await apiClient.get('/...')
-```
-⚠️ `internals` 无稳定性承诺，属于逃生舱。**尽量不用**。
+---
+
+## core-stub 的维护
+
+`src/core-stub/` 是 `@chataigram/core` 在设计师模式下的替身：
+
+- `types.ts` — 所有领域类型定义（从 core-api.md 同步）
+- `index.ts` — hook 的 stub 实现（fetch → MSW）
+- `internals.ts` — `@chataigram/core/internals` 的 stub（逃生舱）
+
+**更新时机**：当 `docs/core-api.md` 更新（core 仓 CI 同步过来），同步更新 `types.ts` 的类型定义。
+
+**注意**：stub 的 hook 实现只是 placeholder，真正的业务逻辑在 core 仓。
+真集成联调请在 `chataigram-app` 组装项目中进行。
 
 ---
 
@@ -78,23 +87,24 @@ const data = await apiClient.get('/...')
 
 ```ts
 import { http, HttpResponse } from 'msw'
-import type { FeedItem, Paginated } from '@chataigram/core'
+import type { Paginated, Post } from '@chataigram/core'
 
 export const handlers = [
   http.get('/api/feed', () => {
-    const payload: Paginated<FeedItem> = {
-      items: [
-        { id: '1', authorId: 'u1', content: 'hello', createdAt: '2026-04-13', likeCount: 0, liked: false },
+    const payload: { posts: Post[]; nextOffset: null } = {
+      posts: [
+        { id: 1, parentId: 0, authorId: 1, photoUrl: null, content: 'hello',
+          type: 2, likeCount: 0, relayCount: 0, commentCount: 0, shareCount: 0,
+          optional: null, hasRemixes: false },
       ],
-      nextCursor: null,
-      total: 1,
+      nextOffset: null,
     }
     return HttpResponse.json(payload)
   }),
 ]
 ```
 
-**关键**：`import type from '@chataigram/core'` —— 用 core 的真实类型，保证 mock 形状和真实契约对齐。类型对不上 tsc 会报错，早发现总比线上早。
+**关键**：`import type from '@chataigram/core'` —— 用 core-stub 的类型，保证 mock 形状和真实契约对齐。类型对不上 tsc 会报错。
 
 ---
 
@@ -125,15 +135,14 @@ export const handlers = [
 ## 命令
 
 ```bash
-pnpm dev              # Vite dev server，连真后端
-pnpm dev:mocks        # 带 MSW，完全离线开发
-pnpm typecheck        # tsc -b，同时 check packages/core
+pnpm dev              # Vite dev server + MSW mock（默认 mock 模式）
+pnpm dev:mocks        # 同上（显式 mock 模式）
+pnpm typecheck        # tsc -b
 pnpm lint
 pnpm test             # Vitest：L2 hook 测试 + L3 组件测试
 pnpm e2e              # Playwright L4：真浏览器端到端
 pnpm e2e:ui           # Playwright UI mode（调试用）
 pnpm build
-pnpm core:status      # 看 packages/core pin 哪个 SHA
 ```
 
 **提交前**：`pnpm lint && pnpm typecheck && pnpm build` 全绿。
@@ -142,7 +151,7 @@ pnpm core:status      # 看 packages/core pin 哪个 SHA
 
 ## GitHub 协作规则（设计师严格遵守）
 
-设计师**只能修改 web 仓**（本仓 `chataigram-web`），core 仓碰不得。下面规则**不可绕过**：
+设计师**只能修改 web 仓**（本仓 `chataigram-web`）。下面规则**不可绕过**：
 
 **1. 一切改动走 PR，禁止直推 main**
 
@@ -182,8 +191,7 @@ pnpm lint && pnpm typecheck && pnpm build
 
 | 症状 | 原因 | 解法 |
 |---|---|---|
-| `import '@chataigram/core'` 红线 | submodule 没 init | `git submodule update --init --recursive` 或 `pnpm install` |
-| `fetch` 被 ESLint 拦 | 规则有效 | 用 core 的 hook，或走 wishlist |
-| 改了 `packages/core/` PR 被拒 | CODEOWNERS | 去 core 仓提 PR |
-| tsc 报 core 里某个类型变了 | Downstream Gate 的好处 | 按新类型改调用点 |
-| `pnpm install` 报 workspace 缺失 | submodule 没 clone | `git submodule update --init` |
+| `import '@chataigram/core'` 红线 | IDE 没识别 paths alias | 重启 TS server，或检查 tsconfig.app.json 的 paths |
+| `fetch` 被 ESLint 拦 | 规则有效 | 用 core-stub 的 hook，或走 wishlist |
+| tsc 报 core-stub 类型不对 | core-api.md 更新了但 stub 没同步 | 按 docs/core-api.md 更新 src/core-stub/types.ts |
+| MSW 没拦截到请求 | handler 路径不匹配 | 检查 src/mocks/handlers.ts 的路径 |
