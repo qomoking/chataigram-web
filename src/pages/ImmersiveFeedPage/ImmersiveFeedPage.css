@@ -298,8 +298,6 @@
   color: rgba(255, 255, 255, 0.8);
   padding: 6px 10px;
   background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
   border-radius: 12px;
   max-width: fit-content;
   pointer-events: auto;
@@ -416,89 +414,3 @@
   box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.3);
 }
 
-/* ── 恶搞面板 ────────────────────────────────────────────── */
-
-.imf-prank-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 350;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: imfBackdropIn 0.2s ease both;
-}
-
-.imf-prank-panel {
-  background: rgba(30, 30, 30, 0.95);
-  border-radius: 20px;
-  padding: 20px;
-  max-width: 320px;
-  width: 90%;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.imf-prank-title {
-  font-size: 18px;
-  font-weight: 700;
-  text-align: center;
-  color: #fff;
-  margin-bottom: 4px;
-}
-
-.imf-prank-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.imf-prank-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  cursor: pointer;
-  text-align: left;
-  color: #fff;
-  transition: background 0.15s ease;
-}
-
-.imf-prank-item:active {
-  background: rgba(139, 92, 246, 0.2);
-}
-
-.imf-prank-item:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.imf-prank-emoji {
-  font-size: 24px;
-  flex-shrink: 0;
-}
-
-.imf-prank-label {
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.imf-prank-desc {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-left: auto;
-}
-
-.imf-prank-cancel {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  padding: 10px;
-  font-size: 14px;
-  cursor: pointer;
-  text-align: center;
-}

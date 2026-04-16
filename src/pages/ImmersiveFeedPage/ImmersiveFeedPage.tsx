@@ -1006,8 +1006,6 @@ export default function ImmersiveFeedPage() {
                   border: '1px solid rgba(168,85,247,0.4)',
                   borderRadius: 20,
                   padding: '5px 14px',
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
                 }}>
                   <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>{t('prank.tappedPrefix')}</span>
                   <span style={{ fontSize: 13, color: '#e0b4ff', fontWeight: 700 }}>{prankLabel}</span>
@@ -1033,6 +1031,8 @@ export default function ImmersiveFeedPage() {
                         position: 'relative',
                         height: 130,
                         background: isClicked ? 'rgba(108,92,231,0.25)' : 'rgba(255,255,255,0.08)',
+                        backdropFilter: 'blur(6px)',
+                        WebkitBackdropFilter: 'blur(6px)',
                         border: isClicked
                           ? '1px solid rgba(168,85,247,0.8)'
                           : '1px solid rgba(255,255,255,0.18)',
