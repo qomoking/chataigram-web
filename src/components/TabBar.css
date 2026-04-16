@@ -28,7 +28,19 @@
 }
 
 .tabbar-item.active {
-  color: var(--text);
+  color: var(--accent);
+}
+
+.tabbar-item.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
 }
 
 .tabbar-item-icon {

@@ -21,7 +21,20 @@
 
 ## 开放中
 
-_(暂无条目)_
+### [2026-04-15] useRemixPost: accept ret_code 202
+- **场景**：Feed 页选创意卡片后 remix 请求被当作失败 — 后端返回 `ret_code: 202`（HTTP Accepted），但 `useRemixPost.ts:40` 只接受 `200`
+- **期望签名**：不变，只修改 ret_code 校验逻辑
+- **期望数据**：`(raw.ret_code !== 200 && raw.ret_code !== 202) || !raw.task_id` 
+- **紧急度**：`blocker`（remix 功能完全不可用）
+- **提出者**：@yin
+- **状态**：`open`
+
+### [2026-04-15] useRemixTask: handle missing status field
+- **场景**：remix 任务完成时后端返回 `{ ret_code: 200, post: {...} }` 但无 `status` 字段，`useRemixTask.ts:34` 检查 `!raw.status` 为 true 导致误判为 error
+- **期望签名**：不变，推断 status — 有 `post` → `'done'`，有 `error` → `'error'`，否则 `'pending'`
+- **紧急度**：`blocker`（即使绕过 202 问题，轮询结果也被误判）
+- **提出者**：@yin
+- **状态**：`open`
 
 ---
 

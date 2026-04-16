@@ -1,7 +1,6 @@
 import {
   Component,
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -18,13 +17,8 @@ import {
   usePlazaSocket,
   type PlazaBumpTarget,
   type PlazaUser,
-  type PlazaViewerContext,
 } from '@chataigram/core'
 import CdnImg from '../../components/CdnImg'
-import TabBar from '../../components/TabBar'
-import { useLottieSlots } from '../../hooks/useLottieSlots'
-import { isFakeUserId } from '../../fakePresence/fakeUsers'
-import { useFakePresence } from '../../fakePresence/useFakePresence'
 import './PlazaPage.css'
 
 const TAP_THRESHOLD = 8
@@ -63,10 +57,6 @@ export default function PlazaPage() {
   const [animations, setAnimations] = useState<Record<number, object>>({})
   const animationsRef = useRef(animations)
   animationsRef.current = animations
-  // 关系快照：init 时一次性下发，用于 useLottieSlots 分层选人
-  const [viewerContext, setViewerContext] = useState<PlazaViewerContext | null>(null)
-  // user_id → 加入 plaza 的时戳；init 时给在场用户一个基线，user_join 时取 now
-  const [joinedAt, setJoinedAt] = useState<Record<number, number>>({})
 
   const panRef = useRef({ x: 0, y: 0 })
   const worldRef = useRef<HTMLDivElement>(null)
@@ -107,28 +97,29 @@ export default function PlazaPage() {
   const onInit = useCallback(
     (msg: Parameters<NonNullable<Parameters<typeof usePlazaSocket>[1]['onInit']>>[0]) => {
       setUsers(msg.users)
-      setViewerContext(msg.viewerContext)
-      const now = Date.now()
-      // init 里的用户都视为"已在场"，并列相同基线时戳
-      const baseline: Record<number, number> = {}
-      for (const u of msg.users) baseline[u.id] = now
-      setJoinedAt(baseline)
       if (msg.myPos) {
         setMyPos(msg.myPos)
         setTimeout(() => centerOn(msg.myPos!.x, msg.myPos!.y), 50)
       }
+      // 预取所有已在广场的用户的 Lottie
+      for (const u of msg.users) {
+        if (u.animationTaskId) void fetchAnimation(u.id, u.animationTaskId)
+      }
     },
-    [centerOn],
+    [centerOn, fetchAnimation],
   )
 
-  const onUserJoin = useCallback((user: PlazaUser) => {
-    setUsers((prev) => {
-      const existing = prev.find((u) => u.id === user.id)
-      if (existing) return prev.map((u) => (u.id === user.id ? user : u))
-      return [...prev, user]
-    })
-    setJoinedAt((prev) => ({ ...prev, [user.id]: Date.now() }))
-  }, [])
+  const onUserJoin = useCallback(
+    (user: PlazaUser) => {
+      setUsers((prev) => {
+        const existing = prev.find((u) => u.id === user.id)
+        if (existing) return prev.map((u) => (u.id === user.id ? user : u))
+        return [...prev, user]
+      })
+      if (user.animationTaskId) void fetchAnimation(user.id, user.animationTaskId)
+    },
+    [fetchAnimation],
+  )
 
   const onAnimationReady = useCallback(
     (userId: number, taskId: string) => {
@@ -184,42 +175,6 @@ export default function PlazaPage() {
     onAnimationReady,
   })
 
-  // ── 撑场子假人：真人 < 4 时混进 3-5 个，画面不空 ────────────────
-  // ready 阶段（Lottie 已进 cache）才注入；selection 在 onInit 后定一次不变
-  const { displayUsers, fakeJoinedAt } = useFakePresence({
-    realUsers: users,
-    currentUserId: myId,
-    myPos,
-    initialized: connected,
-  })
-
-  const mergedJoinedAt = useMemo(
-    () => ({ ...joinedAt, ...fakeJoinedAt }),
-    [joinedAt, fakeJoinedAt],
-  )
-
-  // ── Lottie 硬上限选人 ──────────────────────────────────────────
-  // 自己永远 Lottie，单独处理；其他在线用户里最多 7 个拿到 Lottie 名额
-  const lottieIds = useLottieSlots({
-    users: displayUsers,
-    viewerContext,
-    currentUserId: myId,
-    joinedAt: mergedJoinedAt,
-  })
-
-  // 只对 lottie 名单内用户（+自己）预取动画。非名单用户用 CdnImg 展示，
-  // 省移动端内存 / 带宽。进/出名单时 effect 会自然补齐缺失的预取。
-  // 假人走同一路径：prefetchAnimation 在 react-query cache 命中（idle 阶段已灌入），
-  // 不会发 HTTP，直接写进本地 animations state。
-  useEffect(() => {
-    for (const u of displayUsers) {
-      const needLottie = u.id === myId || lottieIds.has(u.id)
-      if (needLottie && u.animationTaskId) {
-        void fetchAnimation(u.id, u.animationTaskId)
-      }
-    }
-  }, [displayUsers, lottieIds, myId, fetchAnimation])
-
   // ── Pan handling ──────────────────────────────────────────────
   const getEventPos = (e: React.TouchEvent | React.MouseEvent) => {
     if ('touches' in e) {
@@ -268,7 +223,7 @@ export default function PlazaPage() {
       const HIT_RADIUS = 40
       let closest: PlazaUser | null = null
       let closestDist = Infinity
-      for (const u of displayUsers) {
+      for (const u of users) {
         if (u.id === myId) continue
         const dx = worldX - u.posX
         const dy = worldY - u.posY
@@ -280,7 +235,7 @@ export default function PlazaPage() {
       }
       setSelectedUser(closest)
     },
-    [displayUsers, myId],
+    [users, myId],
   )
 
   const handlePointerUp = (e: React.TouchEvent | React.MouseEvent) => {
@@ -301,24 +256,6 @@ export default function PlazaPage() {
 
   // ── Actions ───────────────────────────────────────────────────
   const handleBump = (targetUserId: number) => {
-    if (isFakeUserId(targetUserId)) {
-      // 假人没有真实链路，本地造视觉反馈，不发后端
-      const target = displayUsers.find((u) => u.id === targetUserId)
-      if (target) {
-        const id = Date.now() + Math.random()
-        setBumpEffects((prev) => [
-          ...prev,
-          { id, x: target.posX, y: target.posY, fromName: '你' },
-        ])
-        setTimeout(() => {
-          setBumpEffects((prev) => prev.filter((e) => e.id !== id))
-        }, BUMP_DURATION)
-        setBumpedUid(targetUserId)
-        setTimeout(() => setBumpedUid(null), 600)
-      }
-      setSelectedUser(null)
-      return
-    }
     send({ type: 'bump', targetUserId })
     setSelectedUser(null)
   }
@@ -337,13 +274,13 @@ export default function PlazaPage() {
   // ── Off-screen indicators ─────────────────────────────────────
   const offScreenIndicators = useMemo(() => {
     const vp = viewportRef.current
-    if (!vp || displayUsers.length === 0) return []
+    if (!vp || users.length === 0) return []
     const vpW = vp.clientWidth
     const vpH = vp.clientHeight
     const pan = panRef.current
     const result: { user: PlazaUser; x: number; y: number }[] = []
 
-    for (const u of displayUsers) {
+    for (const u of users) {
       if (u.id === myId) continue
       const sx = u.posX + pan.x
       const sy = u.posY + pan.y
@@ -368,9 +305,9 @@ export default function PlazaPage() {
     }
     return result
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [panVersion, displayUsers, myId])
+  }, [panVersion, users, myId])
 
-  const otherCount = displayUsers.filter((u) => u.id !== myId).length
+  const otherCount = users.filter((u) => u.id !== myId).length
 
   // ── Render ────────────────────────────────────────────────────
   return (
@@ -378,7 +315,7 @@ export default function PlazaPage() {
       <div className="plaza-header">
         <span className="plaza-title">Plaza</span>
         <span className={`plaza-online-badge${connected ? '' : ' disconnected'}`}>
-          {connected ? `${displayUsers.length} online` : 'connecting...'}
+          {connected ? `${users.length} online` : 'connecting...'}
         </span>
         <button
           type="button"
@@ -404,23 +341,19 @@ export default function PlazaPage() {
         }}
       >
         <div className="plaza-world" ref={worldRef}>
-          {displayUsers.map((u) => {
-            const isSelf = u.id === myId
-            const lottieEligible = isSelf || lottieIds.has(u.id)
-            const showLottie = lottieEligible && !!animations[u.id]
-            return (
+          {users.map((u) => (
             <div
               key={u.id}
-              className={`avatar-marker${isSelf ? ' is-me' : ''}${
+              className={`avatar-marker${u.id === myId ? ' is-me' : ''}${
                 bumpedUid === u.id ? ' bumped' : ''
               }`}
               style={{ left: u.posX, top: u.posY } as CSSProperties}
             >
               <div className="avatar-card">
                 <div
-                  className={`avatar-img-wrap${showLottie ? '' : ' floating'}`}
+                  className={`avatar-img-wrap${animations[u.id] ? '' : ' floating'}`}
                 >
-                  {showLottie ? (
+                  {animations[u.id] ? (
                     <LottieBoundary
                       fallback={
                         u.avatarUrl ? (
@@ -434,7 +367,7 @@ export default function PlazaPage() {
                         animationData={animations[u.id]}
                         loop
                         autoplay
-                        style={{ width: 60, height: 107, borderRadius: 12 }}
+                        style={{ width: 80, height: 80, borderRadius: '50%' }}
                       />
                     </LottieBoundary>
                   ) : u.avatarUrl ? (
@@ -453,8 +386,7 @@ export default function PlazaPage() {
                 ) : null}
               </div>
             </div>
-            )
-          })}
+          ))}
 
           {bumpEffects.map((e) => (
             <div
@@ -489,7 +421,7 @@ export default function PlazaPage() {
           </div>
         ))}
 
-        {!connected && displayUsers.length === 0 && (
+        {!connected && users.length === 0 && (
           <div className="plaza-empty">
             <div className="plaza-empty-icon">~</div>
             <div className="plaza-empty-text">
@@ -578,7 +510,6 @@ export default function PlazaPage() {
         </div>
       </div>
 
-      <TabBar />
     </div>
   )
 }

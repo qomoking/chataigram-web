@@ -5,7 +5,6 @@ import { useSavedPosts } from '../../hooks/useSavedPosts'
 import { HeartIcon, BookmarkIcon } from '../../components/icons'
 import CdnImg from '../../components/CdnImg'
 import { FeedSkeleton } from '../../components/Skeleton'
-import TabBar from '../../components/TabBar'
 import { pickColor } from '../../utils/color'
 import styles from './FeedPage.module.css'
 
@@ -94,7 +93,6 @@ export default function FeedPage() {
         />
       )}
 
-      <TabBar />
     </main>
   )
 }

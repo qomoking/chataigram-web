@@ -1,0 +1,96 @@
+.feed-onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: feedOnboardingIn 0.3s ease;
+}
+
+@keyframes feedOnboardingIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.feed-onboarding-card {
+  background: rgba(30, 30, 30, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 36px 28px 28px;
+  width: min(300px, 80vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  animation: feedOnboardingCardIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes feedOnboardingCardIn {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.feed-onboarding-icon {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.feed-onboarding-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.feed-onboarding-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.feed-onboarding-dots {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.feed-onboarding-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.2s;
+}
+
+.feed-onboarding-dot.active {
+  width: 20px;
+  background: var(--accent);
+}
+
+.feed-onboarding-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.feed-onboarding-btn:active {
+  opacity: 0.8;
+}
+
+.feed-onboarding-skip {
+  background: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px;
+}

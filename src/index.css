@@ -60,6 +60,11 @@ body {
   overflow: hidden;
 }
 
+.app-shell,
+.page-area {
+  height: 100%;
+}
+
 @media (min-width: 600px) {
   html, body {
     height: 100%;

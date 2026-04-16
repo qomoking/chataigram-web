@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useCurrentUser, useLogout, useUnreadCount } from '@chataigram/core'
 import CdnImg from '../../components/CdnImg'
-import TabBar from '../../components/TabBar'
 import { getProfile, saveProfile, type LocalProfile } from '../../utils/profile-storage'
 import { t } from '../../utils/i18n'
 import './ProfilePage.css'
@@ -153,7 +152,6 @@ export default function ProfilePage() {
           <Entry icon="🎟️" label={t('profile.invites')} onClick={() => navigate('/invites')} />
         </div>
       </div>
-      <TabBar />
     </div>
   )
 }

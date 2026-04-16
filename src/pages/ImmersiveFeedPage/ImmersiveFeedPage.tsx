@@ -1,13 +1,14 @@
 import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import {
   useCommentPost,
   useFeed,
   useLikePost,
+  usePublishPost,
   usePrankSuggestions,
   useRemixes,
-  useRemixPost,
   useUserInfo,
   segmentAndSuggestStream,
   type Post,
@@ -16,12 +17,14 @@ import {
   type SegmentPromptItem,
 } from '@chataigram/core'
 import CdnImg from '../../components/CdnImg'
-import TabBar from '../../components/TabBar'
 import PreviewCard from '../../components/PreviewCard'
 import UnseenBubble from '../../components/UnseenBubble'
 import VoiceRemixButton from '../../components/VoiceRemixButton'
 import TapBubble, { type TapBubblePhase } from '../../components/TapBubble'
+import FeedOnboarding, { shouldShowFeedOnboarding } from '../../components/FeedOnboarding'
 import useUnseenNotifications from '../../hooks/useUnseenNotifications'
+// TODO(core): replace with core's useRemixPost/useRemixTask once fixed
+import { useRemixPostFixed, useRemixTaskFixed } from '../../hooks/useRemixWorkaround'
 import { t } from '../../utils/i18n'
 import { timeAgo } from '../../utils/time'
 import './ImmersiveFeedPage.css'
@@ -69,32 +72,18 @@ function useDrag({
     }
   }, [])
 
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
     start.current = { x: e.clientX, y: e.clientY }
   }, [])
-  const onMouseUp = useCallback((e: React.MouseEvent) => {
+  const onPointerUp = useCallback((e: React.PointerEvent) => {
     if (!start.current) return
     const dx = e.clientX - start.current.x
     const dy = e.clientY - start.current.y
     start.current = null
     process(dx, dy, e.clientX, e.clientY)
   }, [process])
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    const t = e.touches[0]
-    if (!t) return
-    start.current = { x: t.clientX, y: t.clientY }
-  }, [])
-  const onTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!start.current) return
-    const t = e.changedTouches[0]
-    if (!t) return
-    const dx = t.clientX - start.current.x
-    const dy = t.clientY - start.current.y
-    start.current = null
-    process(dx, dy, t.clientX, t.clientY)
-  }, [process])
 
-  return { onMouseDown, onMouseUp, onTouchStart, onTouchEnd }
+  return { onPointerDown, onPointerUp }
 }
 
 function viewportToImagePixel(
@@ -149,6 +138,11 @@ export default function ImmersiveFeedPage() {
   const [bubblePhase, setBubblePhase] = useState<TapBubblePhase>(null)
   const [bubbleLabel, setBubbleLabel] = useState('')
   const [bubblePos, setBubblePos] = useState({ x: 0, y: 0 })
+  const [tapPulse, setTapPulse] = useState(false)
+  const [likedSet, setLikedSet] = useState<Set<number>>(() => new Set())
+  const [likeBounce, setLikeBounce] = useState(false)
+  const [slideDir, setSlideDir] = useState<'up' | 'down' | 'left' | 'right' | null>(null)
+  const [showOnboarding, setShowOnboarding] = useState(shouldShowFeedOnboarding)
 
   const commentInputRef = useRef<HTMLInputElement>(null)
   const activeImgRef = useRef<HTMLImageElement>(null)
@@ -157,12 +151,35 @@ export default function ImmersiveFeedPage() {
   const prankLoadingRef = useRef(false)
   const wandRef = useRef<HTMLDivElement>(null)
 
+  const queryClient = useQueryClient()
   const comment = useCommentPost()
   const prank = usePrankSuggestions()
-  const remix = useRemixPost()
+  const remix = useRemixPostFixed()
+  const publish = usePublishPost()
+  const [remixTaskId, setRemixTaskId] = useState<string | null>(null)
+  const { data: remixTask } = useRemixTaskFixed(remixTaskId)
+  const [remixResult, setRemixResult] = useState<Post | null>(null)
+  const [publishToast, setPublishToast] = useState(false)
 
   const posts: Post[] = data?.posts ?? []
+  const stablePostIdRef = useRef<number | null>(null)
+
   const rootPost = posts[activeIdx] ?? null
+
+  // 记录当前看的 post id（只在用户主动切换时更新）
+  useEffect(() => {
+    if (rootPost) stablePostIdRef.current = rootPost.id
+  }, [rootPost])
+
+  // feed 数据刷新后恢复到之前看的帖子（防止 invalidate 后跳走）
+  const prevPostsRef = useRef(posts)
+  useEffect(() => {
+    if (posts !== prevPostsRef.current && stablePostIdRef.current != null && posts.length > 0) {
+      const idx = posts.findIndex((p) => p.id === stablePostIdRef.current)
+      if (idx >= 0) setActiveIdx(idx)
+      prevPostsRef.current = posts
+    }
+  }, [posts])
   const { data: remixes } = useRemixes(rootPost?.id ?? null)
 
   const visiblePost = useMemo<Post | null>(() => {
@@ -180,6 +197,17 @@ export default function ImmersiveFeedPage() {
 
   const remixTotal = 1 + (remixes?.length ?? 0)
 
+  // remix 任务完成 → 展示结果让用户决定是否发布
+  useEffect(() => {
+    if (!remixTask) return
+    if (remixTask.status === 'done' && remixTask.post) {
+      setRemixTaskId(null)
+      setRemixResult(remixTask.post)
+    } else if (remixTask.status === 'error') {
+      setRemixTaskId(null)
+    }
+  }, [remixTask])
+
   // 切换帖子时重置 tap 状态
   useEffect(() => {
     lastTapPointRef.current = null
@@ -191,18 +219,34 @@ export default function ImmersiveFeedPage() {
   }, [activeIdx, remixIdx])
 
   const swipeUp = useCallback(() => {
-    setActiveIdx((i) => Math.min(i + 1, Math.max(posts.length - 1, 0)))
+    setActiveIdx((i) => {
+      const next = Math.min(i + 1, Math.max(posts.length - 1, 0))
+      if (next !== i) setSlideDir('up')
+      return next
+    })
     setRemixIdx(0)
   }, [posts.length])
   const swipeDown = useCallback(() => {
-    setActiveIdx((i) => Math.max(i - 1, 0))
+    setActiveIdx((i) => {
+      const next = Math.max(i - 1, 0)
+      if (next !== i) setSlideDir('down')
+      return next
+    })
     setRemixIdx(0)
   }, [])
   const swipeLeft = useCallback(() => {
-    setRemixIdx((i) => Math.min(i + 1, remixTotal - 1))
+    setRemixIdx((i) => {
+      const next = Math.min(i + 1, remixTotal - 1)
+      if (next !== i) setSlideDir('left')
+      return next
+    })
   }, [remixTotal])
   const swipeRight = useCallback(() => {
-    setRemixIdx((i) => Math.max(i - 1, 0))
+    setRemixIdx((i) => {
+      const next = Math.max(i - 1, 0)
+      if (next !== i) setSlideDir('right')
+      return next
+    })
   }, [])
 
   const closePrankPanel = useCallback(() => {
@@ -287,6 +331,8 @@ export default function ImmersiveFeedPage() {
       setBubblePos({ x: clientX, y: clientY })
       setBubbleLabel('')
       setBubblePhase('waiting')
+      setTapPulse(true)
+      setTimeout(() => setTapPulse(false), 200)
       prankLoadingRef.current = true
 
       let capturedLabel = ''
@@ -363,10 +409,14 @@ export default function ImmersiveFeedPage() {
     else swipeDown()
   }
 
-  const handleLike = (e: React.MouseEvent) => {
+  const handleLike = (e: React.PointerEvent) => {
     e.stopPropagation()
     if (!visiblePost) return
+    if (likedSet.has(visiblePost.id)) return
     like.mutate(visiblePost.id)
+    setLikedSet((s) => new Set(s).add(visiblePost.id))
+    setLikeBounce(true)
+    setTimeout(() => setLikeBounce(false), 400)
   }
 
 
@@ -374,12 +424,17 @@ export default function ImmersiveFeedPage() {
   const handleVoiceRemix = useCallback(
     (text: string) => {
       if (!visiblePost) return
-      remix.mutate({
-        authorId: visiblePost.authorId,
-        parentPostId: visiblePost.id,
-        instruction: text,
-        mode: 'draw-back',
-      })
+      remix.mutate(
+        {
+          authorId: visiblePost.authorId,
+          parentPostId: visiblePost.id,
+          instruction: text,
+          mode: 'draw-back',
+        },
+        {
+          onSuccess: (taskId) => setRemixTaskId(taskId),
+        },
+      )
     },
     [visiblePost, remix],
   )
@@ -395,14 +450,18 @@ export default function ImmersiveFeedPage() {
         mode: 'draw-back',
       },
       {
-        onSettled: () => {
+        onSuccess: (taskId) => {
+          setRemixTaskId(taskId)
+          closePrankPanel()
+        },
+        onError: () => {
           closePrankPanel()
         },
       },
     )
   }
 
-  const handleCommentOpen = (e: React.MouseEvent) => {
+  const handleCommentOpen = (e: React.PointerEvent) => {
     e.stopPropagation()
     setCommentOpen(true)
     setTimeout(() => commentInputRef.current?.focus(), 50)
@@ -427,7 +486,6 @@ export default function ImmersiveFeedPage() {
     return (
       <div className="imf-page">
         <div className="imf-loading"><div className="imf-spinner" /></div>
-        <TabBar />
       </div>
     )
   }
@@ -438,7 +496,6 @@ export default function ImmersiveFeedPage() {
           <div>{t('feed.loadError')}</div>
           <div style={{ fontSize: 12, opacity: 0.6, marginTop: 8 }}>{String(error)}</div>
         </div>
-        <TabBar />
       </div>
     )
   }
@@ -449,7 +506,6 @@ export default function ImmersiveFeedPage() {
           <div className="imf-empty-icon">✦</div>
           <p>{t('feed.noPostsHint')}</p>
         </div>
-        <TabBar />
       </div>
     )
   }
@@ -465,13 +521,17 @@ export default function ImmersiveFeedPage() {
       onDoubleClick={handleDoubleTap}
     >
       {/* 主图区域 */}
-      <div className="imf-image-wrap" key={`${visiblePost.id}-${remixIdx}`}>
+      <div
+        className={`imf-image-wrap${slideDir ? ` imf-slide-${slideDir}` : ''}`}
+        key={`${visiblePost.id}-${remixIdx}`}
+        onAnimationEnd={() => setSlideDir(null)}
+      >
         {visiblePost.photoUrl ? (
           <CdnImg
             ref={activeImgRef}
             src={visiblePost.photoUrl}
             alt={visiblePost.content ?? ''}
-            className="imf-image"
+            className={`imf-image${tapPulse ? ' imf-image-pulse' : ''}`}
             draggable={false}
           />
         ) : (
@@ -533,7 +593,7 @@ export default function ImmersiveFeedPage() {
               </svg>
               {visiblePost.relayCount}
             </span>
-            <button type="button" className="imf-stat-btn" onClick={handleCommentOpen}>
+            <button type="button" className="imf-stat-btn" onPointerDown={handleCommentOpen}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -542,8 +602,17 @@ export default function ImmersiveFeedPage() {
                 ? `${(visiblePost.commentCount / 1000).toFixed(1)}K`
                 : visiblePost.commentCount}
             </button>
-            <button type="button" className="imf-stat-btn" aria-label="like" onClick={handleLike}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <button
+              type="button"
+              className={`imf-stat-btn${visiblePost && likedSet.has(visiblePost.id) ? ' imf-liked' : ''}${likeBounce ? ' imf-like-bounce' : ''}`}
+              aria-label="like"
+              onPointerDown={handleLike}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24"
+                fill={visiblePost && likedSet.has(visiblePost.id) ? '#ff3b5c' : 'none'}
+                stroke={visiblePost && likedSet.has(visiblePost.id) ? '#ff3b5c' : 'currentColor'}
+                strokeWidth="2"
+              >
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
               </svg>
               {visiblePost.likeCount >= 1000
@@ -559,6 +628,65 @@ export default function ImmersiveFeedPage() {
 
       {/* TapBubble */}
       <TapBubble phase={bubblePhase} label={bubbleLabel} clientX={bubblePos.x} clientY={bubblePos.y} />
+
+      {/* remix 生成中指示 */}
+      {remixTaskId != null && (
+        <div className="imf-remix-generating">
+          <div className="imf-remix-generating-spinner" />
+          <span>{t('remix.generating') || '生成中…'}</span>
+        </div>
+      )}
+
+      {/* 发布成功提示 */}
+      {publishToast && (
+        <div className="imf-publish-toast">✅ 已发布，左滑查看</div>
+      )}
+
+      {/* remix 结果预览 */}
+      {remixResult && (
+        <div className="imf-remix-result" onPointerDown={(e) => e.stopPropagation()}>
+          <div className="imf-remix-result-card">
+            <CdnImg
+              src={remixResult.photoUrl!}
+              alt="remix result"
+              className="imf-remix-result-img"
+            />
+            <div className="imf-remix-result-actions">
+              <button
+                type="button"
+                className="imf-remix-result-btn imf-remix-result-publish"
+                onPointerDown={() => {
+                  publish.mutate(remixResult.id, {
+                    onSuccess: () => {
+                      // 取消 usePublishPost 内部的 feed re-fetch，防止 random 排序跳走
+                      void queryClient.cancelQueries({ queryKey: ['feed'] })
+                      // 只刷新当前帖子的 remixes
+                      void queryClient.invalidateQueries({ queryKey: ['remixes'] })
+                      setRemixResult(null)
+                      setPublishToast(true)
+                      setTimeout(() => setPublishToast(false), 2000)
+                    },
+                    onError: () => {
+                      setRemixResult(null)
+                    },
+                  })
+                }}
+                disabled={publish.isPending}
+              >
+                {publish.isPending ? '发布中…' : '✨ 发布'}
+              </button>
+              <button
+                type="button"
+                className="imf-remix-result-btn imf-remix-result-discard"
+                onPointerDown={() => setRemixResult(null)}
+                disabled={publish.isPending}
+              >
+                丢弃
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 垂直分页指示 */}
       <div className="imf-pagination">
@@ -582,22 +710,21 @@ export default function ImmersiveFeedPage() {
       {preview && <PreviewCard notification={preview} onClose={() => setPreview(null)} />}
 
       {/* ── 语音按钮 —— 固定居中下方，portal 到 #root ── */}
-      {root && !prankPanel && !remix.isPending && createPortal(
+      {root && !prankPanel && !(remix.isPending || remixTaskId != null || remixResult != null) && createPortal(
         <div style={{
           position: 'fixed', bottom: 140, left: '50%', transform: 'translateX(-50%)',
           zIndex: 9999,
         }}
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          onMouseUp={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
         >
-          <VoiceRemixButton onRemix={handleVoiceRemix} disabled={remix.isPending} />
+          <VoiceRemixButton onRemix={handleVoiceRemix} disabled={remix.isPending || remixTaskId != null || remixResult != null} />
         </div>,
         root,
       )}
 
       {/* ── 魔法棒 —— 固定右下，summoning 时飞向屏幕中心，portal 到 #root ── */}
-      {root && (wandPhase !== 'idle' || !prankPanel) && !remix.isPending && createPortal(
+      {root && (wandPhase !== 'idle' || !prankPanel) && !(remix.isPending || remixTaskId != null || remixResult != null) && createPortal(
         <div
           ref={wandRef}
           style={{
@@ -663,11 +790,8 @@ export default function ImmersiveFeedPage() {
             @keyframes magicCircleSpin{0%{transform:rotate(0deg);opacity:0;}20%{opacity:0.7;}100%{transform:rotate(360deg);opacity:0.7;}}
           `}</style>
           <button
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => { e.stopPropagation(); e.preventDefault(); handleDoubleTap() }}
-            onClick={(e) => { e.stopPropagation(); handleDoubleTap() }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onMouseUp={(e) => e.stopPropagation()}
+            onPointerDown={(e) => { e.stopPropagation(); handleDoubleTap() }}
+            onPointerUp={(e) => e.stopPropagation()}
             style={{
               width: 64, height: 64, border: 'none', borderRadius: 14,
               touchAction: 'none', background: 'none',
@@ -1050,7 +1174,7 @@ export default function ImmersiveFeedPage() {
         </div>
       )}
 
-      <TabBar />
+      {showOnboarding && <FeedOnboarding onDone={() => setShowOnboarding(false)} />}
     </div>
   )
 }

@@ -6,6 +6,7 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
   useNavigate,
 } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
@@ -33,6 +34,7 @@ import ImmersiveFeedPage from './pages/ImmersiveFeedPage/ImmersiveFeedPage'
 import NotificationManager, {
   type NotificationManagerHandle,
 } from './components/NotificationManager'
+import TabBar from './components/TabBar'
 import { prefetchCdnConfig } from '@chataigram/core'
 
 // 启动即预热 CDN 配置
@@ -54,6 +56,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
  */
 function Shell() {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const { data: currentUser } = useCurrentUser()
   const qc = useQueryClient()
   const notifRef = useRef<NotificationManagerHandle>(null)
@@ -76,6 +79,8 @@ function Shell() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const showTabBar = ['/', '/feed', '/create', '/plaza', '/profile'].includes(pathname)
+
   return (
     <div className="app-shell">
       <div className="page-area">
@@ -94,6 +99,7 @@ function Shell() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      {showTabBar && <TabBar />}
       <NotificationManager ref={notifRef} />
     </div>
   )
