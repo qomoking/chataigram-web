@@ -763,4 +763,141 @@ type PlazaStatusAction = {
   statusEmoji: string | null
 }
 type PlazaClientMessage = PlazaBumpAction | PlazaStatusAction
+
+type PlazaViewerContext = {
+  invitedByUserIds: number[]
+  inviteeUserIds: number[]
+  interactedUserIds: number[]
+  interactionTimes: Record<string, string>  // userId → ISO timestamp
+}
 ```
+
+注：`PlazaInitMessage` 在 `@since 0.0.11` 加了 `viewerContext: PlazaViewerContext | null` 字段。
+
+---
+
+## CDN Routing
+
+### prefetchCdnConfig
+
+```ts
+function prefetchCdnConfig(): Promise<CdnConfig>
+```
+
+启动时调用，异步拉 `/api/cdn-config` 并写入 sessionStorage。后续同步 rewrite 能直接命中。
+
+### rewriteCdnUrlSync
+
+```ts
+function rewriteCdnUrlSync(url: string | null | undefined): string
+```
+
+同步重写 URL（走 sessionStorage 缓存）。没缓存就返回原 URL。用于 initial render 避免 flash。
+
+### rewriteCdnUrl
+
+```ts
+function rewriteCdnUrl(url: string | null | undefined): Promise<string | null>
+```
+
+异步重写（等 config 加载完）。`url` 为空返回 `null`。
+
+### getFallbackUrl
+
+```ts
+function getFallbackUrl(url: string | null): string | null
+```
+
+图片加载失败时返回 fallback host 版本，没 fallback 返回 `null`。
+
+---
+
+## Animation Prefetch
+
+### prefetchAnimation
+
+```ts
+function prefetchAnimation(
+  qc: QueryClient,
+  userId: number,
+  taskId: string,
+): Promise<object | null>
+```
+
+预取用户头像的 Lottie JSON，缓存到 react-query。返回 Lottie JSON 对象，没拿到返回 `null`。
+
+---
+
+## Post Update
+
+### useUpdatePost
+
+```ts
+function useUpdatePost(): UseMutationResult<void, Error, UpdatePostInput>
+```
+
+**类型：**
+```ts
+type UpdatePostInput = {
+  postId: number
+  content?: string
+  photoUrl?: string
+}
+```
+
+---
+
+## Avatar Generate / Iterate
+
+### useAvatarGenerate
+
+```ts
+function useAvatarGenerate(): UseMutationResult<
+  AvatarGenerateResult,
+  Error,
+  AvatarGenerateInput
+>
+```
+
+**类型：**
+```ts
+type AvatarGenerateStep = 'prompt' | 'generate'
+
+type AvatarGenerateInput = {
+  userId: number
+  text: string
+  styleChips?: string[]
+  onStep?: (step: AvatarGenerateStep) => void
+}
+
+type AvatarGenerateResult = { resultUrl: string }
+```
+
+### useAvatarIterate
+
+```ts
+function useAvatarIterate(): UseMutationResult<
+  AvatarIterateResult,
+  Error,
+  AvatarIterateInput
+>
+```
+
+**类型：**
+```ts
+type AvatarIterateStep = 'describe' | 'prompt' | 'generate'
+
+type AvatarIterateInput = {
+  userId: number
+  prevImageUrl: string
+  text: string
+  styleChips?: string[]
+  onStep?: (step: AvatarIterateStep) => void
+}
+
+type AvatarIterateResult = { resultUrl: string }
+```
+
+---
+
+注：`Post` 类型在 `@since 0.0.11` 加了 `createdAt?: string | null` 可选字段。
