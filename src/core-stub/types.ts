@@ -359,6 +359,7 @@ export type SegmentPromptItem = {
   icon?: string | null
   text: string
   prompt: string
+  is_interactive?: boolean
 }
 export type SegmentAndSuggestStreamOptions = {
   imageUrl: string
@@ -368,4 +369,23 @@ export type SegmentAndSuggestStreamOptions = {
   onLabel?: (label: string) => void
   onPrompts?: (prompts: SegmentPromptItem[]) => void
   onError?: (err: string) => void
+}
+
+// ── Interactive SAM3 Stream (临场互动) ──────────────────────
+
+export type InteractiveSegmentStreamOptions = SegmentAndSuggestStreamOptions & {
+  avatarUrl: string
+}
+
+// ── Immersive Generate ──────────────────────────────────────
+
+export type ImmersiveGenerateInput = {
+  sceneImageUrl: string
+  avatarUrl: string
+  prompt: string
+}
+
+export type ImmersiveGenerateResult = {
+  resultUrl: string | null
+  error: string | null
 }

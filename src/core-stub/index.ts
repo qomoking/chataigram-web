@@ -78,6 +78,9 @@ export type {
   AvatarGenerateStep,
   AvatarIterateStep,
   SegmentAndSuggestStreamOptions,
+  InteractiveSegmentStreamOptions,
+  ImmersiveGenerateInput,
+  ImmersiveGenerateResult,
 } from './types'
 
 import type {
@@ -121,6 +124,9 @@ import type {
   AvatarGenerateStep,
   AvatarIterateStep,
   SegmentAndSuggestStreamOptions,
+  InteractiveSegmentStreamOptions,
+  ImmersiveGenerateInput,
+  ImmersiveGenerateResult,
   Post,
 } from './types'
 
@@ -535,6 +541,30 @@ export async function segmentAndSuggestStream(
   _opts: SegmentAndSuggestStreamOptions,
 ): Promise<void> {
   // no-op in stub mode
+}
+
+export async function segmentAndSuggestInteractiveStream(
+  _opts: InteractiveSegmentStreamOptions,
+): Promise<void> {
+  // no-op in stub mode
+}
+
+// ─────────────────────────────────────────────────────────────
+// Immersive Generate (临场互动)
+// ─────────────────────────────────────────────────────────────
+
+export function useImmersiveGenerate() {
+  return useMutation<ImmersiveGenerateResult, Error, ImmersiveGenerateInput>({
+    mutationFn: (input) =>
+      stubPost<{ ret_code: number; result_url: string | null; error: string | null }>(
+        '/api/immersive_generate',
+        {
+          scene_image_url: input.sceneImageUrl,
+          avatar_url: input.avatarUrl,
+          prompt: input.prompt,
+        },
+      ).then((r) => ({ resultUrl: r.result_url, error: r.error })),
+  })
 }
 
 // ─────────────────────────────────────────────────────────────
