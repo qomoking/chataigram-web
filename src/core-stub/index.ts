@@ -15,6 +15,8 @@ export type {
   Paginated,
   FeedSortMode,
   UseFeedParams,
+  FeedCardVM,
+  FeedViewModelReturn,
   User,
   LoginCredentials,
   RegisterInput,
@@ -86,6 +88,8 @@ export type {
 import type {
   UseFeedParams,
   FeedPage,
+  FeedCardVM,
+  FeedViewModelReturn,
   User,
   AuthSuccess,
   LoginCredentials,
@@ -201,6 +205,34 @@ export function useLikePost() {
     mutationFn: (postId) => stubPost(`/api/posts/${postId}/like`),
     onSuccess: () => { void qc.invalidateQueries({ queryKey: ['feed'] }) },
   })
+}
+
+export function useFeedViewModel(
+  params: { limit?: number; offset?: number } = {},
+): FeedViewModelReturn {
+  const feed = useFeed({ limit: params.limit ?? 20, offset: params.offset })
+  const likeMutation = useLikePost()
+  const posts = feed.data?.posts ?? []
+
+  const items: FeedCardVM[] = posts.map((p) => ({
+    id: p.id,
+    photoUrl: p.photoUrl,
+    content: p.content,
+    authorId: p.authorId,
+    authorLabel: `user-${p.authorId}`,
+    authorInitial: String(p.authorId).slice(-1),
+    likeCount: p.likeCount,
+    hasRemixes: p.hasRemixes,
+  }))
+
+  return {
+    items,
+    isLoading: feed.isLoading,
+    error: feed.error ? (feed.error instanceof Error ? feed.error.message : String(feed.error)) : null,
+    nextOffset: feed.data?.nextOffset ?? null,
+    like: (postId: number) => likeMutation.mutate(postId),
+    isLikePending: likeMutation.isPending,
+  }
 }
 
 // ─────────────────────────────────────────────────────────────

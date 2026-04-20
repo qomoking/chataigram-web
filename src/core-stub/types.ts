@@ -42,6 +42,27 @@ export type UseFeedParams = {
   sortMode?: FeedSortMode
 }
 
+/** Feed 卡片的 ViewModel —— core 侧完成全部数据加工，web 直接渲染。 */
+export type FeedCardVM = {
+  id: number
+  photoUrl: string | null
+  content: string | null
+  authorId: number
+  authorLabel: string
+  authorInitial: string
+  likeCount: number
+  hasRemixes: boolean
+}
+
+export type FeedViewModelReturn = {
+  items: FeedCardVM[]
+  isLoading: boolean
+  error: string | null
+  nextOffset: number | null
+  like: (postId: number) => void
+  isLikePending: boolean
+}
+
 // ── User / Auth ─────────────────────────────────────────────
 
 export type User = {

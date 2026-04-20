@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useFeed, useLikePost } from '@chataigram/core'
-import type { Post } from '@chataigram/core'
+import { useFeedViewModel } from '@chataigram/core'
+import type { FeedCardVM } from '@chataigram/core'
 import { useSavedPosts } from '../../hooks/useSavedPosts'
 import { HeartIcon, BookmarkIcon } from '../../components/icons'
 import CdnImg from '../../components/CdnImg'
@@ -10,17 +10,16 @@ import styles from './FeedPage.module.css'
  * Feed 页 —— 公开 feed 流，masonry 布局 + 点赞 + 收藏 + Lightbox。
  */
 export default function FeedPage() {
-  const { data, isLoading, error } = useFeed({ limit: 20 })
-  const like = useLikePost()
+  const { items, isLoading, error, like } = useFeedViewModel({ limit: 20 })
   const { isSaved, toggle: toggleSave } = useSavedPosts()
   const [bumpId, setBumpId] = useState<number | null>(null)
-  const [lightbox, setLightbox] = useState<Post | null>(null)
+  const [lightbox, setLightbox] = useState<FeedCardVM | null>(null)
 
   const handleLike = (postId: number, e?: React.MouseEvent) => {
     e?.stopPropagation()
     setBumpId(postId)
     setTimeout(() => setBumpId(null), 300)
-    like.mutate(postId)
+    like(postId)
   }
 
   const handleSave = (postId: number, e?: React.MouseEvent) => {
@@ -28,9 +27,8 @@ export default function FeedPage() {
     toggleSave(postId)
   }
 
-  const posts = data?.posts ?? []
-  const col1 = posts.filter((_, i) => i % 2 === 0)
-  const col2 = posts.filter((_, i) => i % 2 === 1)
+  const col1 = items.filter((_, i) => i % 2 === 0)
+  const col2 = items.filter((_, i) => i % 2 === 1)
 
   return (
     <main className={styles.page}>
@@ -41,25 +39,23 @@ export default function FeedPage() {
       {isLoading && <div className={styles.empty}>Loading…</div>}
 
       {error && (
-        <div className={styles.error}>
-          {String(error instanceof Error ? error.message : error)}
-        </div>
+        <div className={styles.error}>{error}</div>
       )}
 
-      {!isLoading && !error && posts.length === 0 && (
+      {!isLoading && !error && items.length === 0 && (
         <div className={styles.empty}>
           <div className={styles.emptyIcon}>✦</div>
           <p>暂无帖子</p>
         </div>
       )}
 
-      {posts.length > 0 && (
+      {items.length > 0 && (
         <div className={styles.masonry}>
           <div className={styles.col}>
             {col1.map((p) => (
               <Card
                 key={p.id}
-                post={p}
+                vm={p}
                 bumped={bumpId === p.id}
                 isSaved={isSaved(p.id)}
                 onLike={(e) => handleLike(p.id, e)}
@@ -72,7 +68,7 @@ export default function FeedPage() {
             {col2.map((p) => (
               <Card
                 key={p.id}
-                post={p}
+                vm={p}
                 bumped={bumpId === p.id}
                 isSaved={isSaved(p.id)}
                 onLike={(e) => handleLike(p.id, e)}
@@ -86,7 +82,7 @@ export default function FeedPage() {
 
       {lightbox && (
         <Lightbox
-          post={lightbox}
+          vm={lightbox}
           isSaved={isSaved(lightbox.id)}
           onLike={() => handleLike(lightbox.id)}
           onSave={() => handleSave(lightbox.id)}
@@ -100,7 +96,7 @@ export default function FeedPage() {
 // ── Card ────────────────────────────────────────────────
 
 type CardProps = {
-  post: Post
+  vm: FeedCardVM
   bumped: boolean
   isSaved: boolean
   onLike: (e: React.MouseEvent) => void
@@ -108,17 +104,14 @@ type CardProps = {
   onOpen: () => void
 }
 
-function Card({ post, bumped, isSaved, onLike, onSave, onOpen }: CardProps) {
-  const initial = String(post.authorId).slice(-1)
-  const color = pickColor(post.authorId)
-
+function Card({ vm, bumped, isSaved, onLike, onSave, onOpen }: CardProps) {
   return (
     <article className={styles.card} onClick={onOpen}>
       <div className={styles.imgWrap}>
-        {post.photoUrl ? (
+        {vm.photoUrl ? (
           <CdnImg
-            src={post.photoUrl}
-            alt={post.content ?? ''}
+            src={vm.photoUrl}
+            alt={vm.content ?? ''}
             className={styles.img}
             loading="lazy"
           />
@@ -137,18 +130,18 @@ function Card({ post, bumped, isSaved, onLike, onSave, onOpen }: CardProps) {
 
       <div className={styles.body}>
         <div className={styles.author}>
-          <div className={styles.dot} style={{ background: color }}>
-            {initial}
+          <div className={styles.dot} style={{ background: pickColor(vm.authorId) }}>
+            {vm.authorInitial}
           </div>
-          <span className={styles.authorName}>user-{post.authorId}</span>
+          <span className={styles.authorName}>{vm.authorLabel}</span>
         </div>
 
-        {post.content && <p className={styles.prompt}>{post.content}</p>}
+        {vm.content && <p className={styles.prompt}>{vm.content}</p>}
 
         <div className={styles.actions}>
           <button type="button" className={styles.actionBtn} onClick={onLike}>
             <HeartIcon filled={false} />
-            <span>{post.likeCount}</span>
+            <span>{vm.likeCount}</span>
           </button>
           <button
             type="button"
@@ -166,14 +159,14 @@ function Card({ post, bumped, isSaved, onLike, onSave, onOpen }: CardProps) {
 // ── Lightbox ────────────────────────────────────────────
 
 type LightboxProps = {
-  post: Post
+  vm: FeedCardVM
   isSaved: boolean
   onLike: () => void
   onSave: () => void
   onClose: () => void
 }
 
-function Lightbox({ post, isSaved, onLike, onSave, onClose }: LightboxProps) {
+function Lightbox({ vm, isSaved, onLike, onSave, onClose }: LightboxProps) {
   // 下滑关闭
   const startY = { current: 0 as number }
   const onTouchStart = (e: React.TouchEvent) => {
@@ -188,10 +181,10 @@ function Lightbox({ post, isSaved, onLike, onSave, onClose }: LightboxProps) {
     <div className={styles.lightbox} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className={styles.lbHeader}>
         <div className={styles.lbAuthor}>
-          <div className={styles.dot} style={{ background: pickColor(post.authorId) }}>
-            {String(post.authorId).slice(-1)}
+          <div className={styles.dot} style={{ background: pickColor(vm.authorId) }}>
+            {vm.authorInitial}
           </div>
-          <span>user-{post.authorId}</span>
+          <span>{vm.authorLabel}</span>
         </div>
         <button
           type="button"
@@ -215,23 +208,23 @@ function Lightbox({ post, isSaved, onLike, onSave, onClose }: LightboxProps) {
       </div>
 
       <div className={styles.lbImgWrap} onClick={(e) => e.stopPropagation()}>
-        {post.photoUrl ? (
-          <CdnImg src={post.photoUrl} alt={post.content ?? ''} className={styles.lbImg} />
+        {vm.photoUrl ? (
+          <CdnImg src={vm.photoUrl} alt={vm.content ?? ''} className={styles.lbImg} />
         ) : (
           <div className={styles.imgPlaceholder}>无图</div>
         )}
       </div>
 
-      {post.content && (
+      {vm.content && (
         <div className={styles.lbPrompt} onClick={(e) => e.stopPropagation()}>
-          {post.content}
+          {vm.content}
         </div>
       )}
 
       <div className={styles.lbActions} onClick={(e) => e.stopPropagation()}>
         <button type="button" className={styles.lbActionBtn} onClick={onLike} aria-label="like">
           <HeartIcon size={20} />
-          <span>{post.likeCount}</span>
+          <span>{vm.likeCount}</span>
         </button>
         <button
           type="button"
