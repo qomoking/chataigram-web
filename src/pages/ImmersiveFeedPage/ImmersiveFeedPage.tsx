@@ -3,7 +3,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   useCommentPost,
+  useCreatePost,
+  useCurrentUser,
   useFeed,
+  useImmersiveGenerate,
   useLikePost,
   usePublishPost,
   usePrankSuggestions,
@@ -14,6 +17,7 @@ import {
   useUserInfo,
   rewriteCdnUrlSync,
   segmentAndSuggestStream,
+  segmentAndSuggestInteractiveStream,
   type FeedPage,
   type Post,
   type Notification,
@@ -128,6 +132,7 @@ function getPrankFallback(): SuggestionItem[] {
 }
 
 type WandPhase = 'idle' | 'summoning' | 'exiting'
+type PanelItem = SuggestionItem & { isInteractive?: boolean }
 
 export default function ImmersiveFeedPage() {
   const [sortMode] = useState(decideFeedSortMode)
@@ -140,7 +145,7 @@ export default function ImmersiveFeedPage() {
   const [preview, setPreview] = useState<Notification | null>(null)
   const [commentOpen, setCommentOpen] = useState(false)
   const [commentText, setCommentText] = useState('')
-  const [prankPanel, setPrankPanel] = useState<SuggestionItem[] | null>(null)
+  const [prankPanel, setPrankPanel] = useState<PanelItem[] | null>(null)
   const [prankLoading, setPrankLoading] = useState(false)
   const [prankLabel, setPrankLabel] = useState('')
   const [prankClickedIdx, setPrankClickedIdx] = useState(-1)
@@ -175,6 +180,9 @@ export default function ImmersiveFeedPage() {
   const remixTask = useRemixTask(pendingTaskId, 1500)
   const publishPost = usePublishPost()
   const updatePost = useUpdatePost()
+  const { data: currentUser } = useCurrentUser()
+  const immersiveGenerate = useImmersiveGenerate()
+  const createPost = useCreatePost()
 
   const posts: Post[] = data?.posts ?? []
   // 防止 feed 刷新后 activeIdx 越界
@@ -322,40 +330,48 @@ export default function ImmersiveFeedPage() {
 
       let capturedLabel = ''
 
+      const streamOpts = {
+        imageUrl: visiblePost.photoUrl,
+        points,
+        mode,
+        signal: ac.signal,
+        onLabel: (lbl: string) => {
+          if (ac.signal.aborted) return
+          capturedLabel = lbl
+          setBubbleLabel(lbl)
+          setBubblePhase('label')
+        },
+        onPrompts: (prompts: SegmentPromptItem[]) => {
+          if (ac.signal.aborted) return
+          setBubblePhase('done')
+          setPrankLabel(capturedLabel)
+          setPrankClickedIdx(-1)
+          setPrankPanel(
+            prompts.map((p) => ({
+              emoji: p.icon ?? '✨',
+              label: p.text,
+              prompt: p.prompt,
+              desc: null,
+              isInteractive: p.is_interactive ?? false,
+            })),
+          )
+          prankLoadingRef.current = false
+        },
+        onError: () => {
+          if (ac.signal.aborted) return
+          setBubblePhase(null)
+          setPrankPanel(getPrankFallback())
+          prankLoadingRef.current = false
+        },
+      } as const
+
       try {
-        await segmentAndSuggestStream({
-          imageUrl: visiblePost.photoUrl,
-          points,
-          mode,
-          signal: ac.signal,
-          onLabel: (lbl: string) => {
-            if (ac.signal.aborted) return
-            capturedLabel = lbl
-            setBubbleLabel(lbl)
-            setBubblePhase('label')
-          },
-          onPrompts: (prompts: SegmentPromptItem[]) => {
-            if (ac.signal.aborted) return
-            setBubblePhase('done')
-            setPrankLabel(capturedLabel)
-            setPrankClickedIdx(-1)
-            setPrankPanel(
-              prompts.map((p) => ({
-                emoji: p.icon ?? '✨',
-                label: p.text,
-                prompt: p.prompt,
-                desc: null,
-              })),
-            )
-            prankLoadingRef.current = false
-          },
-          onError: () => {
-            if (ac.signal.aborted) return
-            setBubblePhase(null)
-            setPrankPanel(getPrankFallback())
-            prankLoadingRef.current = false
-          },
-        })
+        const myAvatar = currentUser?.avatarUrl
+        if (myAvatar) {
+          await segmentAndSuggestInteractiveStream({ ...streamOpts, avatarUrl: myAvatar })
+        } else {
+          await segmentAndSuggestStream(streamOpts)
+        }
       } catch (err) {
         if ((err as Error)?.name === 'AbortError') return
         setBubblePhase(null)
@@ -367,7 +383,7 @@ export default function ImmersiveFeedPage() {
         setTimeout(() => setBubblePhase(null), 600)
       }
     },
-    [prankPanel, bubblePhase, visiblePost],
+    [prankPanel, bubblePhase, visiblePost, currentUser],
   )
 
   const dragHandlers = useDrag({
@@ -415,9 +431,62 @@ export default function ImmersiveFeedPage() {
     [visiblePost, remix],
   )
 
-  const handlePrankPick = (item: SuggestionItem, idx: number) => {
-    if (!visiblePost || prankClickedIdx >= 0 || remix.isPending) return
+  const handleImmersivePick = useCallback(
+    async (item: PanelItem) => {
+      if (!visiblePost?.photoUrl || !currentUser) return
+      const myAvatar = currentUser.avatarUrl
+      if (!myAvatar) {
+        closePrankPanel()
+        return
+      }
+      try {
+        const result = await immersiveGenerate.mutateAsync({
+          sceneImageUrl: visiblePost.photoUrl,
+          avatarUrl: myAvatar,
+          prompt: item.prompt,
+        })
+        if (!result.resultUrl) throw new Error(result.error ?? 'No result')
+        const { postId } = await createPost.mutateAsync({
+          authorId: currentUser.id,
+          photoUrl: result.resultUrl,
+          content: null,
+          optional: item.prompt,
+          optionalInfo: visiblePost.photoUrl,
+          status: 'draft',
+        })
+        const newPost: Post = {
+          id: postId,
+          parentId: visiblePost.id,
+          authorId: currentUser.id,
+          photoUrl: result.resultUrl,
+          content: null,
+          type: 2,
+          likeCount: 0,
+          relayCount: 0,
+          commentCount: 0,
+          shareCount: 0,
+          optional: item.prompt,
+          hasRemixes: false,
+        }
+        const img = new Image()
+        img.src = rewriteCdnUrlSync(result.resultUrl) ?? result.resultUrl
+        try { await img.decode() } catch { /* fallback */ }
+        closePrankPanel()
+        setPendingRemix({ post: newPost, insertAfterIdx: activeIdx })
+      } catch {
+        closePrankPanel()
+      }
+    },
+    [visiblePost, currentUser, immersiveGenerate, createPost, activeIdx, closePrankPanel],
+  )
+
+  const handlePrankPick = (item: PanelItem, idx: number) => {
+    if (!visiblePost || prankClickedIdx >= 0 || remix.isPending || immersiveGenerate.isPending) return
     setPrankClickedIdx(idx)
+    if (item.isInteractive) {
+      void handleImmersivePick(item)
+      return
+    }
     remix.mutate(
       {
         authorId: visiblePost.authorId,

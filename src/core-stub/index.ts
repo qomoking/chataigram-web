@@ -15,6 +15,8 @@ export type {
   Paginated,
   FeedSortMode,
   UseFeedParams,
+  FeedCardVM,
+  FeedViewModelReturn,
   User,
   LoginCredentials,
   RegisterInput,
@@ -78,11 +80,16 @@ export type {
   AvatarGenerateStep,
   AvatarIterateStep,
   SegmentAndSuggestStreamOptions,
+  InteractiveSegmentStreamOptions,
+  ImmersiveGenerateInput,
+  ImmersiveGenerateResult,
 } from './types'
 
 import type {
   UseFeedParams,
   FeedPage,
+  FeedCardVM,
+  FeedViewModelReturn,
   User,
   AuthSuccess,
   LoginCredentials,
@@ -121,6 +128,9 @@ import type {
   AvatarGenerateStep,
   AvatarIterateStep,
   SegmentAndSuggestStreamOptions,
+  InteractiveSegmentStreamOptions,
+  ImmersiveGenerateInput,
+  ImmersiveGenerateResult,
   Post,
 } from './types'
 
@@ -195,6 +205,34 @@ export function useLikePost() {
     mutationFn: (postId) => stubPost(`/api/posts/${postId}/like`),
     onSuccess: () => { void qc.invalidateQueries({ queryKey: ['feed'] }) },
   })
+}
+
+export function useFeedViewModel(
+  params: { limit?: number; offset?: number } = {},
+): FeedViewModelReturn {
+  const feed = useFeed({ limit: params.limit ?? 20, offset: params.offset })
+  const likeMutation = useLikePost()
+  const posts = feed.data?.posts ?? []
+
+  const items: FeedCardVM[] = posts.map((p) => ({
+    id: p.id,
+    photoUrl: p.photoUrl,
+    content: p.content,
+    authorId: p.authorId,
+    authorLabel: `user-${p.authorId}`,
+    authorInitial: String(p.authorId).slice(-1),
+    likeCount: p.likeCount,
+    hasRemixes: p.hasRemixes,
+  }))
+
+  return {
+    items,
+    isLoading: feed.isLoading,
+    error: feed.error ? (feed.error instanceof Error ? feed.error.message : String(feed.error)) : null,
+    nextOffset: feed.data?.nextOffset ?? null,
+    like: (postId: number) => likeMutation.mutate(postId),
+    isLikePending: likeMutation.isPending,
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -535,6 +573,30 @@ export async function segmentAndSuggestStream(
   _opts: SegmentAndSuggestStreamOptions,
 ): Promise<void> {
   // no-op in stub mode
+}
+
+export async function segmentAndSuggestInteractiveStream(
+  _opts: InteractiveSegmentStreamOptions,
+): Promise<void> {
+  // no-op in stub mode
+}
+
+// ─────────────────────────────────────────────────────────────
+// Immersive Generate (临场互动)
+// ─────────────────────────────────────────────────────────────
+
+export function useImmersiveGenerate() {
+  return useMutation<ImmersiveGenerateResult, Error, ImmersiveGenerateInput>({
+    mutationFn: (input) =>
+      stubPost<{ ret_code: number; result_url: string | null; error: string | null }>(
+        '/api/immersive_generate',
+        {
+          scene_image_url: input.sceneImageUrl,
+          avatar_url: input.avatarUrl,
+          prompt: input.prompt,
+        },
+      ).then((r) => ({ resultUrl: r.result_url, error: r.error })),
+  })
 }
 
 // ─────────────────────────────────────────────────────────────

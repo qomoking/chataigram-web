@@ -22,7 +22,23 @@
 
 ## 开放中
 
-_(暂无条目)_
+### [2026-04-20] segmentAndSuggestInteractiveStream / SegmentPromptItem.is_interactive
+- **场景**：ImmersiveFeedPage 单击图片时，有 avatar 的用户调用 interactive 版本，返回 2 Remix + 1 @me 临场互动
+- **期望签名**：`segmentAndSuggestInteractiveStream(opts: InteractiveSegmentStreamOptions): Promise<void>`
+- **期望数据**：同 `segmentAndSuggestStream`，但 opts 多一个 `avatarUrl: string`；prompts 数组每项多 `is_interactive: boolean`
+- **紧急度**：`mock-ok`（core-stub 已加 stub，MSW 已加 mock handler）
+- **提出者**：@king
+- **状态**：`open`
+- **PR / Issue**：后端 ChatAigram/backend PR#4 已 ready
+
+### [2026-04-20] useImmersiveGenerate（临场互动图片生成）
+- **场景**：ImmersiveFeedPage 用户选择 @me 选项后，调用 Gemini 双图融合（avatar + scene）
+- **期望签名**：`useImmersiveGenerate(): UseMutationResult<ImmersiveGenerateResult, Error, ImmersiveGenerateInput>`
+- **期望数据**：`ImmersiveGenerateInput = { sceneImageUrl, avatarUrl, prompt }` → `ImmersiveGenerateResult = { resultUrl, error }`
+- **紧急度**：`mock-ok`
+- **提出者**：@king
+- **状态**：`open`
+- **PR / Issue**：后端 `POST /api/immersive_generate` 已就绪
 
 ---
 

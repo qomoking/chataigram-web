@@ -693,6 +693,54 @@ export const handlers = [
   }),
 
   // ──────────────────────────────────────────────────────────
+  //  Immersive Interaction (临场互动; ChatAigram/backend PR#4)
+  // ──────────────────────────────────────────────────────────
+
+  // segment_and_suggest_interactive_stream — SSE: 2 remix + 1 @me
+  http.post('/api/segment_and_suggest_interactive_stream', () => {
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (event: string, data: unknown) => {
+          controller.enqueue(
+            encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
+          )
+        }
+        await new Promise((r) => setTimeout(r, 300))
+        send('label', { label: '夕阳' })
+        await new Promise((r) => setTimeout(r, 400))
+        send('prompts', {
+          prompts: [
+            { icon: '🌌', text: '换成星空', prompt: 'Replace the sunset sky with a starry night', is_interactive: false },
+            { icon: '🐦', text: '加海鸥飞过', prompt: 'Add seagulls flying across the sunset', is_interactive: false },
+            { icon: '🤗', text: '陪TA一起看日落', prompt: 'The person from image 1 appears in image 2 scene, watching sunset together', is_interactive: true },
+          ],
+        })
+        controller.close()
+      },
+    })
+    return new HttpResponse(stream, {
+      status: 200,
+      headers: {
+        'content-type': 'text/event-stream',
+        'cache-control': 'no-cache',
+      },
+    })
+  }),
+
+  // immersive_generate — 双图融合（avatar + scene）
+  http.post('/api/immersive_generate', async () => {
+    // 模拟 Gemini 生成延迟
+    await new Promise((r) => setTimeout(r, 800))
+    const seed = Math.random().toString(36).slice(2, 8)
+    return HttpResponse.json({
+      ret_code: 200,
+      result_url: `https://picsum.photos/seed/immersive-${seed}/600/600`,
+      error: null,
+    })
+  }),
+
+  // ──────────────────────────────────────────────────────────
   //  cdn-config — geo CDN routing
   // ──────────────────────────────────────────────────────────
   http.get('/api/cdn-config', () => {

@@ -42,6 +42,27 @@ export type UseFeedParams = {
   sortMode?: FeedSortMode
 }
 
+/** Feed 卡片的 ViewModel —— core 侧完成全部数据加工，web 直接渲染。 */
+export type FeedCardVM = {
+  id: number
+  photoUrl: string | null
+  content: string | null
+  authorId: number
+  authorLabel: string
+  authorInitial: string
+  likeCount: number
+  hasRemixes: boolean
+}
+
+export type FeedViewModelReturn = {
+  items: FeedCardVM[]
+  isLoading: boolean
+  error: string | null
+  nextOffset: number | null
+  like: (postId: number) => void
+  isLikePending: boolean
+}
+
 // ── User / Auth ─────────────────────────────────────────────
 
 export type User = {
@@ -359,6 +380,7 @@ export type SegmentPromptItem = {
   icon?: string | null
   text: string
   prompt: string
+  is_interactive?: boolean
 }
 export type SegmentAndSuggestStreamOptions = {
   imageUrl: string
@@ -368,4 +390,23 @@ export type SegmentAndSuggestStreamOptions = {
   onLabel?: (label: string) => void
   onPrompts?: (prompts: SegmentPromptItem[]) => void
   onError?: (err: string) => void
+}
+
+// ── Interactive SAM3 Stream (临场互动) ──────────────────────
+
+export type InteractiveSegmentStreamOptions = SegmentAndSuggestStreamOptions & {
+  avatarUrl: string
+}
+
+// ── Immersive Generate ──────────────────────────────────────
+
+export type ImmersiveGenerateInput = {
+  sceneImageUrl: string
+  avatarUrl: string
+  prompt: string
+}
+
+export type ImmersiveGenerateResult = {
+  resultUrl: string | null
+  error: string | null
 }
