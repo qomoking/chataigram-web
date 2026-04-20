@@ -5,12 +5,11 @@ import { resolve } from 'node:path'
 const useMocks = process.env['VITE_USE_MOCKS'] === 'true'
 
 /**
- * Core 源码路径解析：
- *   - 默认（设计师模式）：指向 src/core-stub/ —— hook 走 fetch + MSW
- *   - 设 VITE_CORE_PATH：指向真实 core 源码 —— app 组装项目生产构建用
+ * SDK 源码路径解析：
+ *   - 默认（本仓开发）：指向 src/core-stub/ —— hook 走 fetch + MSW 假数据
+ *   - 设 VITE_CORE_PATH：指向真实 SDK 源码 —— 生产构建环境用
  *
- * VITE_CORE_PATH 应指向 core 包的根目录（含 src/index.ts 和 src/internals.ts）
- * 例：在 app 仓构建时设 VITE_CORE_PATH=../core
+ * VITE_CORE_PATH 应指向 SDK 包的根目录（含 src/index.ts 和 src/internals.ts）
  */
 const coreRoot = process.env['VITE_CORE_PATH']
   ? resolve(__dirname, process.env['VITE_CORE_PATH'])

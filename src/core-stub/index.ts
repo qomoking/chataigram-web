@@ -1,11 +1,11 @@
 /**
- * @chataigram/core stub — 设计师本地开发用。
+ * @chataigram/core 的本地 stub。
  *
- * 提供与 core 相同的导出签名，让 `import { ... } from '@chataigram/core'` 编译通过。
- * 运行时搭配 MSW mock 使用（`pnpm dev:mocks`）。
+ * 提供与 SDK 相同的导出签名，让 `import { ... } from '@chataigram/core'` 编译通过。
+ * 运行时通过 MSW 拦截请求返回假数据（`pnpm dev:mocks` / `pnpm dev`）。
  *
- * ⚠️ 这里的 hook 实现只是 placeholder，真正的数据来自 MSW handler。
- *    真集成请在 chataigram-app 组装项目中开发。
+ * ⚠️ 这里的 hook 实现是 placeholder（仅用于本地开发），
+ *    真实业务逻辑在生产构建时由真实 SDK 提供。
  */
 
 // Re-export all types

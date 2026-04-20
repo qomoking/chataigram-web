@@ -26,8 +26,8 @@
 ## 数据与契约
 
 - [ ] 需要的数据已在 `docs/core-api.md` 找到对应 hook
-- [ ] 若 core 没有：加了 `src/mocks/handlers.ts` mock 且类型 import from `@chataigram/core`（走 core-stub）
-- [ ] 若 core 需要新增：已在 `docs/core-wishlist.md` 登记
+- [ ] 若 SDK 没有：加了 `src/mocks/handlers.ts` mock 且类型 import from `@chataigram/core`
+- [ ] 若 SDK 需要新增：已在 `docs/core-wishlist.md` 登记
 
 ## 本地验证
 
