@@ -6,6 +6,48 @@ You are in **chataigram-web** —— 前端主仓。**设计师主场**。
 
 ---
 
+## 设计师权限边界
+
+**身份**：当前操作者是设计师，不是工程师。以下规则必须严格执行。
+
+### 可以改的路径（白名单）
+
+```
+src/pages/**           # 路由页面
+src/components/**      # 可复用组件
+src/styles/**          # 全局样式 / tokens
+src/layouts/**         # 布局
+src/hooks/**           # 纯 UI hook（useMediaQuery / useHover 等）
+src/mocks/handlers.ts  # MSW 假数据（仅添加 handler，不改基础设施）
+src/App.tsx            # 根组件 + 路由
+src/main.tsx           # 入口
+**/*.css               # 任何 CSS 文件
+**/*.module.css        # CSS Modules
+public/**              # 静态资源
+docs/core-wishlist.md  # 许愿单（向 SDK 提需求）
+```
+
+### 禁止改的路径（黑名单，硬性规则）
+
+```
+src/core-stub/**       # SDK 契约驱动，自动同步，勿手改
+docs/core-api.md       # SDK 自动生成的文档，勿手改
+vite.config.ts         # 构建配置（工程师 / 架构师改）
+vitest.config.ts       # 测试配置
+eslint.config.js       # Lint 配置
+tsconfig*.json         # TS 配置
+scripts/**             # 构建脚本
+.github/**             # CI/CD 配置
+```
+
+### 违规时怎么办
+
+- 需要 SDK 没提供的 hook → 写 `docs/core-wishlist.md` 许愿单，不自己补 core-stub
+- 需要改构建配置 → 告知工程师，不自己碰 vite/tsconfig/eslint
+- 绝不"先改了再说"
+
+---
+
 ## 这里装什么
 
 ```

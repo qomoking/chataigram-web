@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -c '\nimport sys, json\ndata = json.load(sys.stdin)\nf = data.get(\"tool_input\", {}).get(\"file_path\", \"\")\nimport os.path\n# Find repo-relative path\nfor marker in [\"chataigram-web/\", \"packages/web/\"]:\n    idx = f.find(marker)\n    if idx >= 0:\n        rel = f[idx + len(marker):]\n        break\nelse:\n    sys.exit(0)\nimport fnmatch\nFORBIDDEN = [\n    \"src/core-stub/*\",\n    \"docs/core-api.md\",\n    \"vite.config.ts\",\n    \"vitest.config.ts\",\n    \"eslint.config.js\",\n    \"tsconfig*.json\",\n    \"scripts/*\",\n    \".github/*\",\n]\nfor pat in FORBIDDEN:\n    if fnmatch.fnmatch(rel, pat):\n        print(json.dumps({\"decision\":\"block\",\"reason\":\"BLOCKED: 设计师不能改 \" + rel + \". 这是基础设施/SDK 契约文件，请联系工程师。\"}))\n        sys.exit(0)\n'",
+            "timeout": 5,
+            "statusMessage": "Checking designer role boundary..."
+          }
+        ]
+      }
+    ]
+  }
+}
