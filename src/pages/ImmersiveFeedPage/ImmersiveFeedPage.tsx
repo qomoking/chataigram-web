@@ -489,7 +489,8 @@ export default function ImmersiveFeedPage() {
         const img = new Image()
         img.src = rewriteCdnUrlSync(result.resultUrl) ?? result.resultUrl
         try { await img.decode() } catch { /* fallback */ }
-        closePrankPanel()
+        // 不手动关 prank 面板 —— setPendingRemix 触发后，portal 的 !pendingRemix 条件
+        // 会让 prank 面板自然退场，避免 "tap → 秒消失" 的体感
         if (rootPost) setPendingRemix({ post: newPost, insertAfterPostId: rootPost.id })
       } catch {
         closePrankPanel()
@@ -519,7 +520,7 @@ export default function ImmersiveFeedPage() {
     )
   }
 
-  // remix 任务完成 → 预加载图片 → 关 prank 面板 → 打开 draft 面板
+  // remix 任务完成 → 预加载图片 → 开 draft 面板（prank 面板由 !pendingRemix 自然退场）
   useEffect(() => {
     const task = remixTask.data
     if (!task) return
@@ -539,7 +540,6 @@ export default function ImmersiveFeedPage() {
         img.src = rewriteCdnUrlSync(imgUrl) ?? imgUrl
         try { await img.decode() } catch { /* 降级到自然加载 */ }
       }
-      closePrankPanel()
       setPendingTaskId(null)
       if (insertAfterPostId !== null) {
         setPendingRemix({ post: finishedPost, insertAfterPostId })
@@ -569,14 +569,19 @@ export default function ImmersiveFeedPage() {
         return { ...old, posts: next }
       },
     )
+    // 先清 prank 面板，避免 setPendingRemix(null) 那一帧 portal 条件 `!pendingRemix` 重新成立、面板闪一下
+    closePrankPanel()
     setActivePostId(newPost.id)
     setRemixIdx(0)
     setPendingRemix(null)
-  }, [pendingRemix, updatePost, publishPost, qc])
+  }, [pendingRemix, updatePost, publishPost, qc, closePrankPanel])
 
   const handleSavePendingRemixAsDraft = useCallback(() => {
     setPendingRemix(null)
-  }, [])
+    // 面板已经在 pendingRemix 期间被 !pendingRemix 条件隐藏；
+    // pendingRemix 清空后如果不显式关 prank 面板会重新冒出来
+    closePrankPanel()
+  }, [closePrankPanel])
 
   const handleCommentOpen = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -993,8 +998,8 @@ export default function ImmersiveFeedPage() {
         root,
       )}
 
-      {/* 恶搞面板 — portal 到 #root */}
-      {root && prankPanel !== null && createPortal(
+      {/* 恶搞面板 — portal 到 #root。pendingRemix 出现时自然让位给 RemixDraftPanel */}
+      {root && prankPanel !== null && !pendingRemix && createPortal(
         <>
           <style>{`
             @keyframes prankCardEnter {
