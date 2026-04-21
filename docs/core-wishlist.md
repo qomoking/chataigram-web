@@ -78,26 +78,6 @@
 - **提出者**：@king
 - **状态**：`open`（等设计师执行 web 改造）
 
-### [2026-04-20] [Bug] 沉浸式 feed 选项卡点击后闪现消失（prank panel 自动关闭）
-- **场景**：ImmersiveFeedPage 点魔法棒或图片 → 弹出 3 个 prompt 选项卡 → 点其中一个 → 卡片闪一下就消失了。预期：卡片应保持可见直到生成结果回来 OR 用户显式关闭
-- **紧急度**：`blocker`
-- **根因**：
-  - L1056-1166 渲染条件 `!prankLoading && prankPanel !== null`
-  - L483-502 `handlePrankPick` 触发异步 remix / 生成
-  - L434-481 `handleImmersivePick` await 生成完成后 **L474 立即调用 `closePrankPanel()`** → `prankPanel = null` → L1057 条件失败 → tabs 卸载
-  - L504-529 remix 轮询在 L524 又调用一次 `closePrankPanel()`
-  - L209-226 `useEffect([activeIdx, remixIdx])` 会在索引变化时再次清空 panel 状态
-- **修复位置（工程师禁区）**：`src/pages/ImmersiveFeedPage/ImmersiveFeedPage.tsx`
-- **建议**：
-  1. **拆解状态**：把"用户意图（panel 可见）"和"异步请求状态（loading）"分开。panel 的可见性不应由生成完成回调决定
-  2. **L474**：移除 `closePrankPanel()`，改为生成成功后只更新 panel 内部状态（比如把选中 tab 标记为"已请求"），保留 panel 挂载
-  3. **L524** 同理：remix 轮询结束不应强制关 panel；只在新图片 ready 后由用户手势或显式 dismiss 关闭
-  4. **L209-226**：`useEffect([activeIdx, remixIdx])` 的重置只应在 `activeIdx` 变化时执行，避免 `remixIdx` 变化（即生成一轮完成）顺带清空
-  5. **兜底交互**：提供明显的"关闭"手势（下滑或 X 按钮），而不是依赖副作用自动关
-- **影响**：用户想看生成完成后的结果，但选项卡消失了意味着无法再换一个 prompt 重试，必须重新打开魔法棒 —— "点了没反应 / 闪退"的体验
-- **提出者**：@king（工程师侧定位）
-- **状态**：`open`
-
 ### [2026-04-20] segmentAndSuggestInteractiveStream / SegmentPromptItem.is_interactive
 - **场景**：ImmersiveFeedPage 单击图片时，有 avatar 的用户调用 interactive 版本，返回 2 Remix + 1 @me 临场互动
 - **期望签名**：`segmentAndSuggestInteractiveStream(opts: InteractiveSegmentStreamOptions): Promise<void>`
@@ -119,6 +99,13 @@
 ---
 
 ## 最近完成
+
+### [2026-04-20] [Bug] 沉浸式 feed 选项卡点击后闪现消失（prank panel 过早关闭）
+- **场景**：点魔法棒或图片弹出 3 个 prompt tab → 点一个 → 卡片闪一下就消失
+- **根因**：async 生成完成回调里立刻 `closePrankPanel()`（mock 模式下几乎瞬时）
+- **修复**：portal 渲染条件追加 `!pendingRemix`，让 prank 面板在 RemixDraftPanel 出现时自然退场；生成成功路径不再主动 `closePrankPanel()`（仅错误路径和 handleSave/Publish 保留显式关面板避免闪一帧）
+- **提出者**：@king
+- **状态**：`done`
 
 ### [2026-04-20] [Bug] ImmersiveFeedPage 被动浏览时自动跳下一张
 - **场景**：被动浏览约 30s 后当前图片被动换到下一张
