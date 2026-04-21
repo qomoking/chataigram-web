@@ -52,11 +52,8 @@ function decideFeedSortMode(): 'chrono' | 'random' {
   return isFirstVisitToday || isLongAbsence ? 'chrono' : 'random'
 }
 
-// prank 选项卡点击后要等新图就绪再退场，让用户看到明确的过渡。
-// onload/onerror 比 decode() 更稳（mock / CORS 出错时也能收到），
-// 加 600ms 最小停留覆盖 mock 瞬返 + 让 hop 动画打完，
-// 6s 安全网防止网络卡死时面板一直挂着。
-const PRANK_MIN_HOLD_MS = 600
+// hop 动画 650ms + glow 至少播 ~850ms = 1500ms 从点击算起
+const PRANK_MIN_HOLD_MS = 1500
 const PRANK_HARD_TIMEOUT_MS = 6000
 
 function preloadImage(url: string): Promise<void> {
@@ -76,8 +73,10 @@ function preloadImage(url: string): Promise<void> {
   })
 }
 
-function waitMinAndPreload(url: string | null): Promise<void> {
-  const minHold = new Promise<void>((r) => setTimeout(r, PRANK_MIN_HOLD_MS))
+function waitMinAndPreload(url: string | null, sinceTs?: number): Promise<void> {
+  const elapsed = sinceTs != null ? Date.now() - sinceTs : 0
+  const remaining = Math.max(0, PRANK_MIN_HOLD_MS - elapsed)
+  const minHold = new Promise<void>((r) => setTimeout(r, remaining))
   const load = url ? preloadImage(url) : Promise.resolve()
   return Promise.all([minHold, load]).then(() => undefined)
 }
@@ -199,6 +198,7 @@ export default function ImmersiveFeedPage() {
   const lastTapPointRef = useRef<{ x: number; y: number } | null>(null)
   const segAbortRef = useRef<AbortController | null>(null)
   const prankLoadingRef = useRef(false)
+  const prankClickedAtRef = useRef(0)
   const wandRef = useRef<HTMLDivElement>(null)
   const wheelCooldownRef = useRef(false)
   const lastTapTsRef = useRef(0)
@@ -516,9 +516,7 @@ export default function ImmersiveFeedPage() {
           optional: item.prompt,
           hasRemixes: false,
         }
-        // 等新图就绪（+ 最小停留）再切到 draft 面板。portal 条件 `!pendingRemix` 会
-        // 在 setPendingRemix 触发时让 prank 面板自然退场。
-        await waitMinAndPreload(rewriteCdnUrlSync(result.resultUrl) ?? result.resultUrl)
+        await waitMinAndPreload(rewriteCdnUrlSync(result.resultUrl) ?? result.resultUrl, prankClickedAtRef.current)
         if (rootPost) setPendingRemix({ post: newPost, insertAfterPostId: rootPost.id })
       } catch {
         closePrankPanel()
@@ -530,6 +528,7 @@ export default function ImmersiveFeedPage() {
   const handlePrankPick = (item: PanelItem, idx: number) => {
     if (!visiblePost || prankClickedIdx >= 0 || remix.isPending || immersiveGenerate.isPending) return
     setPrankClickedIdx(idx)
+    prankClickedAtRef.current = Date.now()
     if (item.isInteractive) {
       void handleImmersivePick(item)
       return
@@ -563,7 +562,7 @@ export default function ImmersiveFeedPage() {
     const insertAfterPostId = activePostId
 
     const preload = async () => {
-      await waitMinAndPreload(imgUrl ? (rewriteCdnUrlSync(imgUrl) ?? imgUrl) : null)
+      await waitMinAndPreload(imgUrl ? (rewriteCdnUrlSync(imgUrl) ?? imgUrl) : null, prankClickedAtRef.current)
       setPendingTaskId(null)
       if (insertAfterPostId !== null) {
         setPendingRemix({ post: finishedPost, insertAfterPostId })
