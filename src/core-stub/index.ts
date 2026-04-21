@@ -83,6 +83,9 @@ export type {
   InteractiveSegmentStreamOptions,
   ImmersiveGenerateInput,
   ImmersiveGenerateResult,
+  CompressImageSource,
+  CompressImageOptions,
+  CompressedImage,
 } from './types'
 
 import type {
@@ -132,6 +135,9 @@ import type {
   ImmersiveGenerateInput,
   ImmersiveGenerateResult,
   Post,
+  CompressImageSource,
+  CompressImageOptions,
+  CompressedImage,
 } from './types'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -673,4 +679,103 @@ export function rewriteCdnUrlSync(url: string | null | undefined): string {
 
 export function getFallbackUrl(url: string | null): string | null {
   return url
+}
+
+// ─────────────────────────────────────────────────────────────
+// compressImage（stub：照搬 SDK 的单 pass 行为，方便本地开发）
+// ─────────────────────────────────────────────────────────────
+
+export async function compressImage(
+  source: CompressImageSource,
+  options: CompressImageOptions = {},
+): Promise<CompressedImage> {
+  const maxDimension = options.maxDimension ?? 1600
+  const quality = options.quality ?? 0.85
+  const mimeType = options.mimeType ?? 'image/jpeg'
+
+  const { drawable, intrinsicWidth, intrinsicHeight, cleanup } =
+    await stubToDrawable(source)
+
+  try {
+    const { width, height } = stubScaleToMaxDim(intrinsicWidth, intrinsicHeight, maxDimension)
+    const canvas = document.createElement('canvas')
+    canvas.width = width
+    canvas.height = height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('canvas 2d context unavailable')
+    ctx.drawImage(drawable, 0, 0, width, height)
+    const file = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((b) => resolve(b), mimeType, quality)
+    })
+    if (!file) throw new Error('canvas toBlob returned null')
+    return { file, width, height, aspectRatio: stubAspectRatio(width, height) }
+  } finally {
+    cleanup?.()
+  }
+}
+
+async function stubToDrawable(source: CompressImageSource): Promise<{
+  drawable: CanvasImageSource
+  intrinsicWidth: number
+  intrinsicHeight: number
+  cleanup?: () => void
+}> {
+  if (source instanceof Blob) {
+    if (typeof createImageBitmap === 'function') {
+      const bitmap = await createImageBitmap(source)
+      return {
+        drawable: bitmap,
+        intrinsicWidth: bitmap.width,
+        intrinsicHeight: bitmap.height,
+        cleanup: () => bitmap.close?.(),
+      }
+    }
+    const url = URL.createObjectURL(source)
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image()
+      el.onload = () => resolve(el)
+      el.onerror = () => reject(new Error('image load failed'))
+      el.src = url
+    })
+    return {
+      drawable: img,
+      intrinsicWidth: img.naturalWidth || img.width,
+      intrinsicHeight: img.naturalHeight || img.height,
+      cleanup: () => URL.revokeObjectURL(url),
+    }
+  }
+  if (typeof HTMLVideoElement !== 'undefined' && source instanceof HTMLVideoElement) {
+    if (source.readyState < 2) throw new Error('video not ready for capture (readyState < 2)')
+    return { drawable: source, intrinsicWidth: source.videoWidth, intrinsicHeight: source.videoHeight }
+  }
+  if (typeof HTMLCanvasElement !== 'undefined' && source instanceof HTMLCanvasElement) {
+    return { drawable: source, intrinsicWidth: source.width, intrinsicHeight: source.height }
+  }
+  if (typeof HTMLImageElement !== 'undefined' && source instanceof HTMLImageElement) {
+    return {
+      drawable: source,
+      intrinsicWidth: source.naturalWidth || source.width,
+      intrinsicHeight: source.naturalHeight || source.height,
+    }
+  }
+  if (typeof ImageBitmap !== 'undefined' && source instanceof ImageBitmap) {
+    return { drawable: source, intrinsicWidth: source.width, intrinsicHeight: source.height }
+  }
+  throw new Error('unsupported compressImage source')
+}
+
+function stubScaleToMaxDim(w: number, h: number, max: number) {
+  if (w <= max && h <= max) return { width: w, height: h }
+  const ratio = w / h
+  if (w >= h) return { width: max, height: Math.round(max / ratio) }
+  return { width: Math.round(max * ratio), height: max }
+}
+
+function stubAspectRatio(w: number, h: number): string {
+  const g = stubGcd(w, h)
+  return `${w / g}:${h / g}`
+}
+
+function stubGcd(a: number, b: number): number {
+  return b === 0 ? a : stubGcd(b, a % b)
 }

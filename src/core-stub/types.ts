@@ -410,3 +410,25 @@ export type ImmersiveGenerateResult = {
   resultUrl: string | null
   error: string | null
 }
+
+// ── compressImage（上传前单 pass 压缩） ──────────────────────
+
+export type CompressImageSource =
+  | Blob
+  | HTMLVideoElement
+  | HTMLCanvasElement
+  | HTMLImageElement
+  | ImageBitmap
+
+export type CompressImageOptions = {
+  maxDimension?: number
+  quality?: number
+  mimeType?: string
+}
+
+export type CompressedImage = {
+  file: Blob
+  width: number
+  height: number
+  aspectRatio: string
+}

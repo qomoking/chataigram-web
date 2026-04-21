@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  compressImage,
   useCreatePost,
   useCurrentUser,
   usePhotoToImage,
   type PhotoToImageStep,
   type Post,
 } from '@chataigram/core'
-import { compressImage } from '../utils/image-compress'
 import { t } from '../utils/i18n'
 
 type CameraFlowProps = {
@@ -53,7 +53,7 @@ export default function CameraFlow({ onPost, onClose }: CameraFlowProps) {
   const streamRef = useRef<MediaStream | null>(null)
 
   const runPipeline = useCallback(
-    async (raw: Blob) => {
+    async (video: HTMLVideoElement) => {
       if (!currentUser) {
         setError('未登录')
         setStep('error')
@@ -64,11 +64,13 @@ export default function CameraFlow({ onPost, onClose }: CameraFlowProps) {
       setError(null)
 
       try {
-        const { file: compressed, aspectRatio } = await compressImage(raw)
+        // 直接把 video 交给 core 的 compressImage —— 单 pass：解码 + 缩放 + 编码一气呵成
+        const { file, aspectRatio } = await compressImage(video)
+        setPreviewUrl(URL.createObjectURL(file))
 
         photoToImage.mutate(
           {
-            file: compressed,
+            file,
             authorId: currentUser.id,
             aspectRatio,
             promptVersion: 2,
@@ -159,22 +161,12 @@ export default function CameraFlow({ onPost, onClose }: CameraFlowProps) {
     }
   }, [])
 
-  const captureFrame = useCallback(async () => {
+  const captureFrame = useCallback(() => {
     const video = videoRef.current
     if (!video || video.readyState < 2) return
-    const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    ctx.drawImage(video, 0, 0)
-    const blob = await new Promise<Blob | null>((r) =>
-      canvas.toBlob((b) => r(b), 'image/jpeg', 0.92),
-    )
-    if (!blob) return
-
-    setPreviewUrl(URL.createObjectURL(blob))
-    void runPipeline(blob)
+    // 不在这里提前 canvas.toBlob —— 直接把 video 扔给 runPipeline
+    // 里面的 compressImage 做单 pass，避免两段压缩叠加有损
+    void runPipeline(video)
   }, [runPipeline])
 
   const handlePublish = () => {
