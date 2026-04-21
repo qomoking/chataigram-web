@@ -22,6 +22,62 @@
 
 ## 开放中
 
+### [2026-04-20] [Done-in-core] compressImage —— 单 pass 上传前压缩
+- **场景**：`CameraFlow` 拍照后送 `photoToImage` 前的图片压缩
+- **现状问题**：当前压缩做了两次（叠加有损）
+  - Stage 1 `src/components/CameraFlow.tsx:162-178` —— `video → canvas → toBlob(0.92)`
+  - Stage 2 `src/utils/image-compress.ts:18-44` —— `Blob → decode → canvas(max 1600) → toBlob(0.85)`
+- **core 已落**：`compressImage` 从 `@chataigram/core` 导出（@stable @since 0.0.13）
+  ```ts
+  import { compressImage } from '@chataigram/core'
+
+  type CompressImageSource =
+    | Blob | HTMLVideoElement | HTMLCanvasElement | HTMLImageElement | ImageBitmap
+  type CompressImageOptions = {
+    maxDimension?: number  // 默认 1600
+    quality?: number       // 默认 0.85
+    mimeType?: string      // 默认 'image/jpeg'
+  }
+  type CompressedImage = { file: Blob; width: number; height: number; aspectRatio: string }
+
+  const { file, aspectRatio } = await compressImage(videoRef.current)
+  ```
+  单 pass：优先 `createImageBitmap`（解码 + EXIF 处理），降级 `objectURL + <img>`；然后
+  一次 `canvas.drawImage` 缩放到目标尺寸、一次 `canvas.toBlob` 编码。
+- **设计师要做（web 改造清单）**：
+  1. `src/components/CameraFlow.tsx` 的 `captureFrame`（L162-178）：删掉 `canvas.toBlob` 那段，直接把 `videoRef.current` 传给 `compressImage`。`runPipeline` 的入参从 `raw: Blob` 改成接 `videoRef.current: HTMLVideoElement`，里面 `const { file, aspectRatio } = await compressImage(video)` 一步到位。
+  2. 把旧的 `import { compressImage } from '../utils/image-compress'` 改成 `import { compressImage } from '@chataigram/core'`。类型签名同名、返回形状一致（`{ file, width, height, aspectRatio }`），几乎零改动。
+  3. 删除 `src/utils/image-compress.ts`（冗余）。
+- **Before / After 对比**（CameraFlow.tsx 的 `captureFrame`）：
+  ```tsx
+  // BEFORE —— Stage 1 canvas.toBlob 0.92
+  const captureFrame = useCallback(async () => {
+    const video = videoRef.current
+    if (!video || video.readyState < 2) return
+    const canvas = document.createElement('canvas')
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(video, 0, 0)
+    const blob = await new Promise<Blob | null>((r) =>
+      canvas.toBlob((b) => r(b), 'image/jpeg', 0.92),
+    )
+    if (!blob) return
+    setPreviewUrl(URL.createObjectURL(blob))
+    void runPipeline(blob)  // 再进 Stage 2 压缩
+  }, [runPipeline])
+
+  // AFTER —— 直接把 video 扔给 core 的 compressImage
+  const captureFrame = useCallback(async () => {
+    const video = videoRef.current
+    if (!video || video.readyState < 2) return
+    void runPipeline(video)  // 内部一次 compressImage(video)
+  }, [runPipeline])
+  ```
+- **紧急度**：`mock-ok`（旧代码不碰也能跑，只是输出质量差一档）
+- **提出者**：@king
+- **状态**：`open`（等设计师执行 web 改造）
+
 ### [2026-04-20] [Bug] ImmersiveFeedPage 被动浏览时自动跳下一张
 - **场景**：ImmersiveFeedPage 被动浏览（不点击、不生图），约 30s 后当前图片"自动变"成下一张
 - **紧急度**：`blocker`
