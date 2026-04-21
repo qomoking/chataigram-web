@@ -140,7 +140,8 @@ export default function ImmersiveFeedPage() {
   const like = useLikePost()
   const { unseenList, dismissAll } = useUnseenNotifications()
 
-  const [activeIdx, setActiveIdx] = useState(0)
+  // 绑的是 post.id（不是数组下标），feed 重排后"当前帖子"保持稳定
+  const [activePostId, setActivePostId] = useState<number | null>(null)
   const [remixIdx, setRemixIdx] = useState(0)
   const [preview, setPreview] = useState<Notification | null>(null)
   const [commentOpen, setCommentOpen] = useState(false)
@@ -156,7 +157,7 @@ export default function ImmersiveFeedPage() {
 
   // remix 任务轮询 + draft 面板
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null)
-  const [pendingRemix, setPendingRemix] = useState<{ post: Post; insertAfterIdx: number } | null>(null)
+  const [pendingRemix, setPendingRemix] = useState<{ post: Post; insertAfterPostId: number } | null>(null)
 
   // TapBubble 状态
   const [bubblePhase, setBubblePhase] = useState<TapBubblePhase>(null)
@@ -184,11 +185,24 @@ export default function ImmersiveFeedPage() {
   const immersiveGenerate = useImmersiveGenerate()
   const createPost = useCreatePost()
 
-  const posts: Post[] = data?.posts ?? []
-  // 防止 feed 刷新后 activeIdx 越界
-  const safeIdx = posts.length > 0 ? Math.min(activeIdx, posts.length - 1) : 0
-  if (safeIdx !== activeIdx) setActiveIdx(safeIdx)
-  const rootPost = posts[safeIdx] ?? null
+  const posts: Post[] = useMemo(() => data?.posts ?? [], [data?.posts])
+  // activeIdx 从 activePostId 派生 —— feed 重排时"当前帖子"不动，下标自动跟着走
+  const activeIdx = activePostId !== null
+    ? Math.max(0, posts.findIndex((p) => p.id === activePostId))
+    : 0
+  const rootPost = posts[activeIdx] ?? null
+
+  // 初始化 / 恢复 activePostId：feed 加载后绑定首帖；当前 post 消失时回到首帖
+  useEffect(() => {
+    if (posts.length === 0) {
+      if (activePostId !== null) setActivePostId(null)
+      return
+    }
+    if (activePostId === null || posts.findIndex((p) => p.id === activePostId) === -1) {
+      const first = posts[0]
+      if (first) setActivePostId(first.id)
+    }
+  }, [posts, activePostId])
   const { data: remixes } = useRemixes(rootPost?.id ?? null)
 
   const visiblePost = useMemo<Post | null>(() => {
@@ -223,16 +237,20 @@ export default function ImmersiveFeedPage() {
     setWandPhase('idle')
     setPendingTaskId(null)
     setPendingRemix(null)
-  }, [activeIdx, remixIdx])
+  }, [activePostId, remixIdx])
 
   const swipeUp = useCallback(() => {
-    setActiveIdx((i) => Math.min(i + 1, Math.max(posts.length - 1, 0)))
+    const next = posts[activeIdx + 1]
+    if (!next) return
+    setActivePostId(next.id)
     setRemixIdx(0)
-  }, [posts.length])
+  }, [activeIdx, posts])
   const swipeDown = useCallback(() => {
-    setActiveIdx((i) => Math.max(i - 1, 0))
+    const prev = posts[activeIdx - 1]
+    if (!prev) return
+    setActivePostId(prev.id)
     setRemixIdx(0)
-  }, [])
+  }, [activeIdx, posts])
   const swipeLeft = useCallback(() => {
     setRemixIdx((i) => Math.min(i + 1, remixTotal - 1))
   }, [remixTotal])
@@ -472,12 +490,12 @@ export default function ImmersiveFeedPage() {
         img.src = rewriteCdnUrlSync(result.resultUrl) ?? result.resultUrl
         try { await img.decode() } catch { /* fallback */ }
         closePrankPanel()
-        setPendingRemix({ post: newPost, insertAfterIdx: activeIdx })
+        if (rootPost) setPendingRemix({ post: newPost, insertAfterPostId: rootPost.id })
       } catch {
         closePrankPanel()
       }
     },
-    [visiblePost, currentUser, immersiveGenerate, createPost, activeIdx, closePrankPanel],
+    [visiblePost, currentUser, immersiveGenerate, createPost, rootPost, closePrankPanel],
   )
 
   const handlePrankPick = (item: PanelItem, idx: number) => {
@@ -513,7 +531,7 @@ export default function ImmersiveFeedPage() {
     if (task.status !== 'done' || !task.post) return
     const finishedPost = task.post
     const imgUrl = finishedPost.photoUrl
-    const insertIdx = activeIdx
+    const insertAfterPostId = activePostId
 
     const preload = async () => {
       if (imgUrl) {
@@ -523,14 +541,16 @@ export default function ImmersiveFeedPage() {
       }
       closePrankPanel()
       setPendingTaskId(null)
-      setPendingRemix({ post: finishedPost, insertAfterIdx: insertIdx })
+      if (insertAfterPostId !== null) {
+        setPendingRemix({ post: finishedPost, insertAfterPostId })
+      }
     }
     void preload()
-  }, [remixTask.data, activeIdx, closePrankPanel])
+  }, [remixTask.data, activePostId, closePrankPanel])
 
   const handlePublishPendingRemix = useCallback(async (caption: string | null) => {
     if (!pendingRemix) return
-    const { post: newPost, insertAfterIdx } = pendingRemix
+    const { post: newPost, insertAfterPostId } = pendingRemix
     try {
       if (caption) await updatePost.mutateAsync({ postId: newPost.id, content: caption })
       await publishPost.mutateAsync(newPost.id)
@@ -542,12 +562,14 @@ export default function ImmersiveFeedPage() {
       { queryKey: ['feed'] },
       (old) => {
         if (!old) return old
+        const at = old.posts.findIndex((p) => p.id === insertAfterPostId)
+        if (at === -1) return old
         const next = [...old.posts]
-        next.splice(insertAfterIdx + 1, 0, published)
+        next.splice(at + 1, 0, published)
         return { ...old, posts: next }
       },
     )
-    setActiveIdx(insertAfterIdx + 1)
+    setActivePostId(newPost.id)
     setRemixIdx(0)
     setPendingRemix(null)
   }, [pendingRemix, updatePost, publishPost, qc])

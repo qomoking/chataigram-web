@@ -78,21 +78,6 @@
 - **提出者**：@king
 - **状态**：`open`（等设计师执行 web 改造）
 
-### [2026-04-20] [Bug] ImmersiveFeedPage 被动浏览时自动跳下一张
-- **场景**：ImmersiveFeedPage 被动浏览（不点击、不生图），约 30s 后当前图片"自动变"成下一张
-- **紧急度**：`blocker`
-- **根因（静态分析）**：`activeIdx` 绑的是数组下标，不是 `post.id`。`useFeed({ sortMode: 'random' })` + QueryClient 默认 `refetchOnWindowFocus: true` / `refetchOnReconnect: true` + `staleTime: 30_000`（见 `main.tsx`），以及各 mutation（`useLikePost` / `useCommentPost` / `useCreatePost` / `usePublishPost` / `useUpdatePost` / `useDeletePost`）的 `invalidateQueries(['feed'])`，任何一个触发都会让后端按 random 重排，`activeIdx=3` 指向的帖子"被动换成"另一张。`safeIdx`（L189-190）只裁剪越界，防不了重排。时间点对上 30s staleTime → window focus/reconnect refetch。
-- **修复位置（工程师禁区）**：`src/pages/ImmersiveFeedPage/ImmersiveFeedPage.tsx` L143 / L187-191
-- **建议**：
-  - `useState<number>(activeIdx)` → `useState<string | null>(activePostId)`
-  - 派生 `const activeIdx = posts.findIndex(p => p.id === activePostId)`
-  - `swipeUp` / `swipeDown` 改成更新 `activePostId` 而非 `activeIdx`
-  - 这样 feed 重排后"当前帖子"稳定，index 只是视图派生量
-- **反模式警告**：不要去 core 里把 `refetchOnWindowFocus` 关掉 —— 会波及 `FeedPage` / `useFeedViewModel`，副作用太大
-- **未验证**：真实后端 `sort_mode=random` 的刷新行为需要后端确认；建议 UI 改完后复现验证
-- **提出者**：@king（工程师侧定位）
-- **状态**：`open`
-
 ### [2026-04-20] [Bug] 沉浸式 feed 选项卡点击后闪现消失（prank panel 自动关闭）
 - **场景**：ImmersiveFeedPage 点魔法棒或图片 → 弹出 3 个 prompt 选项卡 → 点其中一个 → 卡片闪一下就消失了。预期：卡片应保持可见直到生成结果回来 OR 用户显式关闭
 - **紧急度**：`blocker`
@@ -134,6 +119,13 @@
 ---
 
 ## 最近完成
+
+### [2026-04-20] [Bug] ImmersiveFeedPage 被动浏览时自动跳下一张
+- **场景**：被动浏览约 30s 后当前图片被动换到下一张
+- **根因**：`activeIdx` 绑数组下标，feed refetch 重排（random）后 index 位移
+- **修复**：`activeIdx: number` → `activePostId: number | null`；activeIdx 从 `posts.findIndex(p => p.id === activePostId)` 派生；swipeUp/Down 改成更新 activePostId；remix 插入用 `insertAfterPostId` 替代 `insertAfterIdx`
+- **提出者**：@king
+- **状态**：`done`
 
 ### [2026-04-16] useUpdatePost（PATCH 帖子文案 / 图片）
 - **场景**：沉浸式 feed 的 RemixDraftPanel 发布前改 caption
