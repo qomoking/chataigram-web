@@ -52,6 +52,36 @@ function decideFeedSortMode(): 'chrono' | 'random' {
   return isFirstVisitToday || isLongAbsence ? 'chrono' : 'random'
 }
 
+// prank 选项卡点击后要等新图就绪再退场，让用户看到明确的过渡。
+// onload/onerror 比 decode() 更稳（mock / CORS 出错时也能收到），
+// 加 600ms 最小停留覆盖 mock 瞬返 + 让 hop 动画打完，
+// 6s 安全网防止网络卡死时面板一直挂着。
+const PRANK_MIN_HOLD_MS = 600
+const PRANK_HARD_TIMEOUT_MS = 6000
+
+function preloadImage(url: string): Promise<void> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    let done = false
+    const finish = () => {
+      if (done) return
+      done = true
+      resolve()
+    }
+    img.onload = finish
+    img.onerror = finish
+    img.src = url
+    if (img.complete) finish() // 已在浏览器缓存里
+    setTimeout(finish, PRANK_HARD_TIMEOUT_MS)
+  })
+}
+
+function waitMinAndPreload(url: string | null): Promise<void> {
+  const minHold = new Promise<void>((r) => setTimeout(r, PRANK_MIN_HOLD_MS))
+  const load = url ? preloadImage(url) : Promise.resolve()
+  return Promise.all([minHold, load]).then(() => undefined)
+}
+
 function useDrag({
   onSwipeX,
   onSwipeY,
@@ -486,11 +516,9 @@ export default function ImmersiveFeedPage() {
           optional: item.prompt,
           hasRemixes: false,
         }
-        const img = new Image()
-        img.src = rewriteCdnUrlSync(result.resultUrl) ?? result.resultUrl
-        try { await img.decode() } catch { /* fallback */ }
-        // 不手动关 prank 面板 —— setPendingRemix 触发后，portal 的 !pendingRemix 条件
-        // 会让 prank 面板自然退场，避免 "tap → 秒消失" 的体感
+        // 等新图就绪（+ 最小停留）再切到 draft 面板。portal 条件 `!pendingRemix` 会
+        // 在 setPendingRemix 触发时让 prank 面板自然退场。
+        await waitMinAndPreload(rewriteCdnUrlSync(result.resultUrl) ?? result.resultUrl)
         if (rootPost) setPendingRemix({ post: newPost, insertAfterPostId: rootPost.id })
       } catch {
         closePrankPanel()
@@ -535,11 +563,7 @@ export default function ImmersiveFeedPage() {
     const insertAfterPostId = activePostId
 
     const preload = async () => {
-      if (imgUrl) {
-        const img = new Image()
-        img.src = rewriteCdnUrlSync(imgUrl) ?? imgUrl
-        try { await img.decode() } catch { /* 降级到自然加载 */ }
-      }
+      await waitMinAndPreload(imgUrl ? (rewriteCdnUrlSync(imgUrl) ?? imgUrl) : null)
       setPendingTaskId(null)
       if (insertAfterPostId !== null) {
         setPendingRemix({ post: finishedPost, insertAfterPostId })
