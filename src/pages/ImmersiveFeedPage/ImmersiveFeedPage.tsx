@@ -1174,6 +1174,18 @@ export default function ImmersiveFeedPage() {
                         transition: 'background 0.2s, border-color 0.2s, box-shadow 0.2s',
                       }}
                     >
+                      {item.isInteractive && (
+                        <span style={{
+                          position: 'absolute', top: 6, right: 6,
+                          background: 'linear-gradient(135deg, #a855f7, #ec4899)',
+                          color: '#fff', fontSize: 9, fontWeight: 800,
+                          padding: '2px 6px', borderRadius: 8,
+                          letterSpacing: 0.5,
+                          boxShadow: '0 0 8px rgba(168,85,247,0.5)',
+                        }}>
+                          @me
+                        </span>
+                      )}
                       <span style={{ fontSize: 30, lineHeight: 1 }}>{item.emoji ?? '🎭'}</span>
                       <span style={{
                         color: '#fff', fontWeight: 700, fontSize: 14,
