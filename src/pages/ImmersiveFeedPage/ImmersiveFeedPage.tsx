@@ -3,19 +3,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   useCommentPost,
-  useCreatePost,
   useCurrentUser,
   useFeed,
-  useImmersiveGenerate,
+  useImmersiveInteraction,
   useLikePost,
   usePublishPost,
   usePrankSuggestions,
   useRemixes,
   useRemixPost,
-  useRemixTask,
   useUpdatePost,
   useUserInfo,
-  rewriteCdnUrlSync,
   segmentAndSuggestStream,
   segmentAndSuggestInteractiveStream,
   type FeedPage,
@@ -154,8 +151,7 @@ export default function ImmersiveFeedPage() {
   const [wandPhase, setWandPhase] = useState<WandPhase>('idle')
   const [wandOffset, setWandOffset] = useState({ x: 0, y: 0 })
 
-  // remix 任务轮询 + draft 面板
-  const [pendingTaskId, setPendingTaskId] = useState<string | null>(null)
+  // draft 面板
   const [pendingRemix, setPendingRemix] = useState<{ post: Post; insertAfterIdx: number } | null>(null)
 
   // TapBubble 状态
@@ -177,12 +173,10 @@ export default function ImmersiveFeedPage() {
   const comment = useCommentPost()
   const prank = usePrankSuggestions()
   const remix = useRemixPost()
-  const remixTask = useRemixTask(pendingTaskId, 1500)
   const publishPost = usePublishPost()
   const updatePost = useUpdatePost()
   const { data: currentUser } = useCurrentUser()
-  const immersiveGenerate = useImmersiveGenerate()
-  const createPost = useCreatePost()
+  const immersive = useImmersiveInteraction()
 
   const posts: Post[] = data?.posts ?? []
   // 防止 feed 刷新后 activeIdx 越界
@@ -215,13 +209,12 @@ export default function ImmersiveFeedPage() {
     segAbortRef.current = null
     prankLoadingRef.current = false
     if (wandTimerRef.current) { clearTimeout(wandTimerRef.current); wandTimerRef.current = null }
-    // 关掉 prank 面板 + 取消进行中的 remix 轮询
+    // 关掉 prank 面板
     setPrankPanel(null)
     setPrankLoading(false)
     setPrankLabel('')
     setPrankClickedIdx(-1)
     setWandPhase('idle')
-    setPendingTaskId(null)
     setPendingRemix(null)
   }, [activeIdx, remixIdx])
 
@@ -431,102 +424,47 @@ export default function ImmersiveFeedPage() {
     [visiblePost, remix],
   )
 
-  const handleImmersivePick = useCallback(
-    async (item: PanelItem) => {
-      if (!visiblePost?.photoUrl || !currentUser) return
-      const myAvatar = currentUser.avatarUrl
-      if (!myAvatar) {
-        closePrankPanel()
-        return
-      }
-      try {
-        const result = await immersiveGenerate.mutateAsync({
-          sceneImageUrl: visiblePost.photoUrl,
-          avatarUrl: myAvatar,
-          prompt: item.prompt,
-        })
-        if (!result.resultUrl) throw new Error(result.error ?? 'No result')
-        const { postId } = await createPost.mutateAsync({
-          authorId: currentUser.id,
-          photoUrl: result.resultUrl,
-          content: null,
-          optional: item.prompt,
-          optionalInfo: visiblePost.photoUrl,
-          status: 'draft',
-        })
-        const newPost: Post = {
-          id: postId,
-          parentId: visiblePost.id,
-          authorId: currentUser.id,
-          photoUrl: result.resultUrl,
-          content: null,
-          type: 2,
-          likeCount: 0,
-          relayCount: 0,
-          commentCount: 0,
-          shareCount: 0,
-          optional: item.prompt,
-          hasRemixes: false,
+  const handlePrankPick = (item: PanelItem, idx: number) => {
+    if (!visiblePost || prankClickedIdx >= 0 || remix.isPending || immersive.isRemixing || immersive.isGenerating) return
+    setPrankClickedIdx(idx)
+
+    const insertIdx = activeIdx
+
+    if (item.isInteractive) {
+      // interactive (@me) 流程：core 负责生图 + 建草稿 + 预加载图片
+      void (async () => {
+        try {
+          const { post } = await immersive.generateAndCreateDraft({
+            sceneImageUrl: visiblePost.photoUrl!,
+            prompt: item.prompt,
+            parentPostId: visiblePost.id,
+            optionalInfo: visiblePost.photoUrl ?? undefined,
+          })
+          closePrankPanel()
+          setPendingRemix({ post, insertAfterIdx: insertIdx })
+        } catch {
+          closePrankPanel()
         }
-        const img = new Image()
-        img.src = rewriteCdnUrlSync(result.resultUrl) ?? result.resultUrl
-        try { await img.decode() } catch { /* fallback */ }
+      })()
+      return
+    }
+
+    // 非 interactive 流程：core 负责 remix → 轮询 → 预加载图片
+    void (async () => {
+      try {
+        const { post } = await immersive.remixAndWait({
+          authorId: visiblePost.authorId,
+          parentPostId: visiblePost.id,
+          instruction: item.prompt,
+          mode: 'draw-back',
+        })
         closePrankPanel()
-        setPendingRemix({ post: newPost, insertAfterIdx: activeIdx })
+        setPendingRemix({ post, insertAfterIdx: insertIdx })
       } catch {
         closePrankPanel()
       }
-    },
-    [visiblePost, currentUser, immersiveGenerate, createPost, activeIdx, closePrankPanel],
-  )
-
-  const handlePrankPick = (item: PanelItem, idx: number) => {
-    if (!visiblePost || prankClickedIdx >= 0 || remix.isPending || immersiveGenerate.isPending) return
-    setPrankClickedIdx(idx)
-    if (item.isInteractive) {
-      void handleImmersivePick(item)
-      return
-    }
-    remix.mutate(
-      {
-        authorId: visiblePost.authorId,
-        parentPostId: visiblePost.id,
-        instruction: item.prompt,
-        mode: 'draw-back',
-      },
-      {
-        onSuccess: (taskId) => setPendingTaskId(taskId),
-        onError: () => closePrankPanel(),
-      },
-    )
+    })()
   }
-
-  // remix 任务完成 → 预加载图片 → 关 prank 面板 → 打开 draft 面板
-  useEffect(() => {
-    const task = remixTask.data
-    if (!task) return
-    if (task.status === 'error') {
-      closePrankPanel()
-      setPendingTaskId(null)
-      return
-    }
-    if (task.status !== 'done' || !task.post) return
-    const finishedPost = task.post
-    const imgUrl = finishedPost.photoUrl
-    const insertIdx = activeIdx
-
-    const preload = async () => {
-      if (imgUrl) {
-        const img = new Image()
-        img.src = rewriteCdnUrlSync(imgUrl) ?? imgUrl
-        try { await img.decode() } catch { /* 降级到自然加载 */ }
-      }
-      closePrankPanel()
-      setPendingTaskId(null)
-      setPendingRemix({ post: finishedPost, insertAfterIdx: insertIdx })
-    }
-    void preload()
-  }, [remixTask.data, activeIdx, closePrankPanel])
 
   const handlePublishPendingRemix = useCallback(async (caption: string | null) => {
     if (!pendingRemix) return
